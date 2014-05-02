@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+	<link rel="stylesheet" href="style.css" />
+        <title>Rézozio</title>
+    </head>
+
+    <body>
+      <header>
+	<div id="headerLeft">
+	  <img src="images/mini_logo.png" alt="Rézozio" />
+	  <h1>Rézozio</h1>
+	</div>
+	<div id="headerRight">
+	  <div>
+	    <form>
+	      <input class="login" type="text" placeholder="Pseudonyme" name="login" />
+	      <input class="login" type="password" placeholder="Mot de pass" name="password" />
+	      <input class="press_input" name="connect" value="Ok !" />
+	    </form>
+	    <form class="mask">
+	      <input id="search" placeholder="Rechercher" type="text" name="search" />
+	      <input class="press_input" type="submit" value="Go !" name="search_submit" />
+	    </form>
+	  </div>
+	</div>
+      </header>
+      <div id="content">
+	<div class="block">
+	  <div class="inner">
+	    <div class="left_block">
+	      <h2>Créer un compte</h2>
+	    </div>
+	    <div id="block_logo">
+	      <img src="images/big_logo.png" alt="Logo rezozio" id="logo"/>
+	    </div>
+	    <hr class="hr_clear"/>
+	  </div>
+	</div>
+      </div>
+      <script src="rezozio.js"></script>
+    </body>
+</html>

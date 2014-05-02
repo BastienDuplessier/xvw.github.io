@@ -1,0 +1,12 @@
+# Simple routine pour nettoyer les fichiers de Emacs
+
+.PHONY: clear
+clear : 
+	rm -f \#*
+	rm -f *~
+	rm -f modules/\#*
+	rm -f modules/*~
+	rm -f layout/\#*
+	rm -f layout/*~
+	rm -f includes/\#*	
+	rm -f includes/*~
