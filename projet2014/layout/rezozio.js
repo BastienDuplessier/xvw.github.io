@@ -7,7 +7,7 @@ function logo_animation(){
 	    flag = !flag
 	}
 	y_axis = (flag) ? y_axis - 1 : y_axis + 1;
-	blogo.style.bottom = y_axis + 'px';
+	blogo.style.top = y_axis + 'px';
     }
     var id = setInterval(move_logo, 30);
 }

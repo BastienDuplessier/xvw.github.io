@@ -75,7 +75,7 @@ header{
 
 .block{
     width: 100%;
-    background-color: #b1dbe0;
+    /* background-color: #b1dbe0; */
     /* border: 1px solid #40a7b2; */
 }
 
@@ -87,6 +87,10 @@ header{
     /* border: 1px solid red; */
     width: 68%; 
     float:left;
+}
+
+.left_block p {
+    background-color: #b1dbe0;
 }
 
 .inner div img{
@@ -110,4 +114,18 @@ header{
 .left_block h2{
     margin: 4px;
     border-bottom: 1px solid #40a7b2;
+}
+.left_block p{
+    padding: 8px;
+}
+
+#register{
+    text-align: center;
+}
+
+.register_input{
+    margin: 12px 0px 0px 0px;
+    width: 98%;
+    border: 1px solid silver;
+    padding: 3px;
 }
