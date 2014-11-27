@@ -5,7 +5,13 @@ RAWS = $(patsubst $(RAW)/%.md,%.html,$(wildcard $(RAW)/*.md))
 
 .PHONY: clean
 
-all: $(RAWS)
+all: post
+	@git add *
+	@git commit -m "Update pages"
+	@echo "Modifications commited"
+	@git push origin master
+
+post: $(RAWS)
 
 %.html: $(RAW)/%.md
 	@$(eval TITLE :=  $(shell sed -n '0,/^#/p' $< | sed -re 's/^# *//'))
