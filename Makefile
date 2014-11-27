@@ -12,7 +12,7 @@ all: $(RAWS)
 	@touch $(POST)/$@
 	@sed -re "s/\{\{TITLE\}\}/$(TITLE)/" $(SRC)/header.html > $(POST)/$@
 	@pandoc $< >> $(POST)/$@
-	@echo "</body></html>" >> $(POST)/$@
+	@cat $(SRC)/footer.html >> $(POST)/$@
 	@echo $(POST)/$@ : [$(TITLE)] created
 
 clean:
