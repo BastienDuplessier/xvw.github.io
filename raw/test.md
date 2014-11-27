@@ -19,3 +19,7 @@ let fact =
 in fact 1
 ``` 
 
+## Tentative de mathématiques 
+$$
+\lambda x \oplus 9
+$$
