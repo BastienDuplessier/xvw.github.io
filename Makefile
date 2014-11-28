@@ -14,7 +14,7 @@ all: post
 post: $(RAWS)
 
 %.html: $(RAW)/%.md
-	@$(eval TITLE :=  $(shell sed -n '0,/^#/p' $< | sed -re 's/^# *//'))
+	@$(eval TITLE :=  $(shell sed -n '0,/^\%/p' $< | sed -re 's/^\% *//'))
 	@touch $(POST)/$@
 	@sed -re "s/\{\{TITLE\}\}/$(TITLE)/" $(SRC)/header.html > $(POST)/$@
 	@pandoc $< >> $(POST)/$@

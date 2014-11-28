@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Les types fantômes</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../default.css">
+    <script src="../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="content">
+      <a href="../index.html">Retourner a l'index</a>
+      <hr id="top" name="top"/>
+<h1 id="les-types-fantômes">Les types fantômes</h1>
+<blockquote>
+<p>Cet article n'a pas grand chose d'inédit. Il s'agit d'une occasion de présenter une utilisation amusante d'un système de type au travers du langage OCaml pour répondre à une problématique pouvant être très coûteuse. Il est important de noter que <strong>cet article utilise au moins OCaml 4</strong>.</p>
+</blockquote>
+<h2 id="avant-propos">Avant-propos</h2>
+<p>Pour une bonne compréhension de cet article, il est pré-requis d'avoir une connaissance sommaire du langage OCaml (connaître les types variants/ disjonctions, les modules et les types abstraits et, <em>évidemment</em>, être à l'aise avec la syntaxe de OCaml). Avant de nous lancer dans le <em>vif</em> du sujet, nous commencerons par évoquer un cas pratique où les types fantômes auraient étés utiles. Ensuite nous rapellerons quelques petites choses relatives à OCaml, et nous définirons <em>enfin</em> ce que sont les types fantômes. En fin d'article quelques cas pratiques seront présentés.</p>
+<h3 id="mars-climate-orbiter">Mars Climate Orbiter</h3>
+<p>Le 23 Mars 1999, la sonde &quot;<em>Mars Climate Orbiter</em>&quot; tente d'effectuer sa manoeuvre d'insertion autour de l'orbite de Mars via une procédure entièrement automatisée. Durant cette démarche, la radio devait impérativement être coupée durant le temps où la sonde se trouverait derrière Mars. Le lendemain, la sonde n'avait toujours pas émis de signaux radio. Elle est considérée comme perdue. oLa sonde avait suivi une trajectoire beaucoup trop basse (près de 140 km de dessous de ce qui était prévu) par rapport à sa vitesse et s'est donc probablement transformée en boule de feu. Une commission d'enquête révelera vite la raison de cette erreur de trajectoire, la sonde recevait la poussée de ses micro propulseurs en <strong>Livre-force.seconde</strong> (une unité de mesure anglo-saxonnes) et le logiciel interne de la sonde traitait ces données comme s'il s'agissait de <strong>Newton.seconde</strong>. Cette non-concordance de données à entraînée des corrections sur la trajectoire de la sonde, l'amenant à sa déstruction et faisant perdre à la NASA près de 125 millions de dollars.</p>
+<p>Cette erreur a des conséquences impressionnantes. Et même si l'on pourrait s'interroger de comment la NASA a pu commettre une erreur aussi grande, elle est extrêmement difficile à déceler car elle ne provoque aucune erreur de compilation. Toutes les données étant traîtées de manière uniforme, comme des flottants. L'enjeu de cet article est de présenter une manière élégante de prévenir ce genre d'erreur à la compilation.</p>
+<h4 id="limite-des-variants-classiques">Limite des variants classiques</h4>
+<p>Limitons notre problème à la distinction des <strong>centimètres</strong> et des <strong>kilomètres</strong>, et comme fonctionnalités, des conversions :</p>
+<ul>
+<li><code>cm_to_km</code></li>
+<li><code>km_to_cm</code></li>
+</ul>
+<p>Naïvement, lorsque j'ai été amené à lire le problème de typage soulevé par la sonde <em>Mars Climate Orbiter</em>, oet de manière plus générale à la représentation d'unités de mesure, j'ai pensé à la définition d'une disjonction séparant les kilomètres des centimètres. Avec, par exemple, ceci comme implémentation :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">exception</span> <span class="dt">IllegalMeasureData</span>
+<span class="kw">type</span> measure = 
+| <span class="dt">Cm</span> <span class="kw">of</span> float 
+| <span class="dt">Km</span> <span class="kw">of</span> float 
+
+<span class="kw">let</span> cm x = <span class="dt">Cm</span> x
+<span class="kw">let</span> km x = <span class="dt">Km</span> x
+
+<span class="kw">let</span> cm_to_km = <span class="kw">function</span> 
+  | <span class="dt">Cm</span> x -&gt; <span class="dt">Km</span> (x *. 1000.0)
+  | _ -&gt; raise <span class="dt">IllegalMeasureData</span>
+
+<span class="kw">let</span> km_to_cm = <span class="kw">function</span> 
+  | <span class="dt">Km</span> x -&gt; <span class="dt">Cm</span> (x /. 1000.0)
+  | _ -&gt; raise <span class="dt">IllegalMeasureData</span></code></pre>
+<p>Cette manière de procéder semble correcte, et si par exemple je tente une conversion sur une valeur invalide, par exemple <code>let test = km_of_cm (cm 10.0)</code>, mon code renverra une erreur <code>IllegalMeasureData</code>, et ce à la compilation. Cependant, si l'erreur se déclenche, c'est uniquement parce que la variable <em>test</em> évalue directement l'expression <code>km_of_cm (cm 10.0)</code>. Voyons ce qu'il se passe si nous essayons de compiler notre code avec cette déclaration : <code>let test () = km_of_cm (cm 10.0)</code>. Cette fois-ci, la compilation fonctionne.</p>
+<p>Ce qui prouve que les erreurs ne sont pas vérifiées à la compilation. Car les fonction <code>km_to_cm</code> et <code>cm_to_km</code> ont le types <code>measure -&gt; measure</code>. Et donc une incohérence telle que passer un Kilomètres à la fonction <code>cm_to_km</code> ne peut être détectée réellement à la compilation.</p>
+
+<hr />
+<a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
+<hr />
+<h2>Commentaires</h2>
+<div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'nukifw'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+    </body>
+</html>
