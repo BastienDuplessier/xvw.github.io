@@ -237,5 +237,21 @@ Ensuite, nous évoquerons quelques cas de figures.
 Concrètement, voici un exemple de type fantôme : `type 'a t = float`.
 Si le type n'est pas abstrait, le type t sera identique à un flottant
 normal. Par contre, si le type est abstrait (donc que son implémentation
-est cachée), le compilateur le différenciera d'un type flottant. 
+est cachée), le compilateur le différenciera d'un type flottant.
+
+Avec cette piètre définition on ne peut pas aller très loin. Voyons dans
+les sections suivantes quelques cas de figures précis d'utilisation
+des types fantômes.
+
+## Distinguer des unités de mesure
+Si cet article a été introduit via une erreur dûe à des unités de mesure,
+ce n'est pas tout à fait innocent. Nous avions vu que via des variants
+classiques, il n'était à priori pas possible (en gardant un confort
+d'utilisation) de distinguer à la compilation des unités de mesures.
+Nous allons voir qu'au moyen des types fantômes, c'est très simple.
+
+Par soucis de lisibilité, j'utiliserai des sous-modules. Cependant, ce
+n'est absolument pas obligatoire.
+
+Commen
 
