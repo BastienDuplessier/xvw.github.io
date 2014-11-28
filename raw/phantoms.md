@@ -71,11 +71,11 @@ let cm x = Cm x
 let km x = Km x
 
 let cm_to_km = function 
-  | Cm x -> Km (x *. 1000.0)
+  | Cm x -> Km (x *. 100000.0)
   | _ -> raise IllegalMeasureData
 
 let km_to_cm = function 
-  | Km x -> Cm (x /. 1000.0)
+  | Km x -> Cm (x /. 100000.0)
   | _ -> raise IllegalMeasureData
 ```
 
@@ -93,3 +93,149 @@ Ce qui prouve que les erreurs ne sont pas vérifiées à la compilation. Car
 les fonction `km_to_cm` et `cm_to_km` ont le types `measure -> measure`.
 Et donc une incohérence telle que passer un Kilomètres à la fonction
 `cm_to_km` ne peut être détectée réellement à la compilation.
+
+## Implémentation des types fantômes
+Nous avons vu que les variants classiques ne permettent pas assez de
+vérification pour distinguer des données au sein d'un même type à la
+compilation (car oui, il serait possible de distinguer chaque unité de
+mesure dans des types différents, de cette manière :
+
+```ocaml
+module Measure =
+struct
+  type km = Km of float
+  type cm = Cm of float
+end
+```
+
+Cependant ce n'est absolument pas confortable et ce n'est pas réellement
+l'intérêt de cet article).
+Donc avant de définir et de proposer une implémentation, nous allons
+devoir (re)voir quelques outils en relation avec le langage OCaml.
+
+### Les variants polymorphiques
+Bien que très utiles dans le *design* d'application, les variants
+possèdent des limitations. Par exemple, le fait qu'un type Somme ne
+puisse être enrichi de constructeurs (ce qui n'est plus tout à fait
+vrai depuis *OCaml 4.02.0*), mais aussi le fait qu'un constructeur ne
+puisse appartenir qu'à un seul type.
+Les variants polymorphes s'extraient de ces deux contraintes et peuvent
+même être déclarés à la volées, sans appartenir à un type prédéfini. La
+définition d'un constructeur polymorphe est identique à un constructeur
+normal (il commence par une majuscule) mais est précédé du caractère
+*`*.
+
+```ocaml
+# let a = `Truc 9;;
+val a : [> `Truc of int ] = `Truc 9
+# let b = `Truc "test";;
+val b : [> `Truc of string ] = `Truc "test"
+```
+
+Comme vous pouvez le voir, je me suis servi deux fois du constructeur
+*`Truc* en lui donnant des arguments à type différent et sans l'avoir
+déclaré.
+
+#### Borne superieur et inférieur
+L'usage des variants polymorphes introduit une notation de retour
+différente de celle des variants normaux. Par exemple :
+
+```ocaml
+let to_int = function 
+  | `Integer x -> x 
+  | `Float x -> int_of_float x;;
+
+let to_int' = function 
+  | `Integer x -> x 
+  | `Float x -> int_of_float x
+  | _ -> 0
+
+# val to_int : [< `Float of float | `Integer of int ] -> int = <fun>
+# val to_int' :[> `Float of float | `Integer of int ] -> int = <fun>
+```
+
+Ce que l'on remarque c'est que le chevron varie. Dans le cas où la
+fonction n'évalue *que* les constructeurs *Integer* et *Float*, le
+chevron est `<`. Si la fonction peut potentiellement évaluer autre
+chose, le chevron est `>`.
+
+*  `[< K]` indique que le type ne peut contenir que K
+*  `[> K]` indique que le type peut contenir au moins K
+
+Nous verrons que cette restriction sur les entrées permettra d'affiner
+le typage de fonctions.
+
+#### Restriction sur les variants polymorphes
+Les variants polymorphes ne permettent tout de même pas de faire des
+choses comme :
+
+```ocaml
+let truc = function
+  | `A -> 0
+  | `A x -> x 
+```
+
+Au sein d'une *même* fonction, on ne peut pas utiliser un *même* variant
+avec des arguments différents. De mon point de vue, c'est plus logique
+que limitant. Mais rien n'empêche de faire deux fonctions, qui elles
+utilisent des variants polymorphes à arguments variables.
+
+#### Nommer les variants polymorphes
+Bien que l'on puisse les nommer à l'usage, il peut parfois être
+confortable de spécifier des variants polymorphes dans un type nommé. (
+Ne serait-ce que pour le confort de la réutilisation). Leur syntaxe (que
+nous verrons un peu plus bas) est assez proche des déclaration de
+variants classique, cependant, **on ne peut pas** spécifier la borne
+dans la définition de type de variants polymorphes. Ce qui est
+parfaitement logique car un type ouvert (donc borné) ne correspond pas
+à un seul type mais à une collection de types.
+
+A la différence des variants normaux, les variants polymorphes se
+déclarent dans une liste dont les différentes énumérations sont séparés
+par un pipe. Par exemple :
+
+```ocaml
+type poly_color = [`Red of int | `Green of int | `Blue of int]
+```
+
+Il est évidemment possible d'utiliser les variants polymorphes dans la
+déclaration de variants normaux, par exemple :
+
+```ocaml
+type color_list =
+| Empty
+| Cons of ( [`Red of int | `Green of int | `Blue of int]  *  color_list)
+```
+
+Par contre, même si dans les définitions de types on ne peut pas
+spécifier de borne, on peut le faire dans les contraintes de types des
+fonctions. Et c'est grâce à cette autorisation que nous utiliserons les
+types fantômes avec des variants polymorphes.
+
+#### Conclusion sur les variants polymorphes
+Les variants polymorphes permettent plus de flexibilité que les variants
+classique. Cependant, ils ont aussi leurs petits soucis :
+
+*  Ils entraînent des petites pertes d'efficacité (mais ça, c'est
+superflu)
+*  Ils diminuent le nombre de vérifications statiques
+*  Ils introduisent des erreurs de typage très complexe
+
+En conclusion, j'ai introduit les variants polymorphes car nous nous en
+serviront pour les types fantômes, cependant, il est conseillé de ne
+s'en servir qu'en cas de réel besoin.
+
+### A l'assault des types fantômes
+Après une très longue introduction et une légère mise en place des
+pré-requis, nous allons expliquer ce que sont les types fantômes.
+Ensuite, nous évoquerons quelques cas de figures.
+
+> Concrètement, un type fantôme n'est rien de plus qu'un type abstrait
+> paramétré dont au moins un des paramètres n'est présent que pour
+> donner des informations sur comment utiliser ce type.
+
+Concrètement, voici un exemple de type fantôme : `type 'a t = float`.
+Si le type n'est pas abstrait, le type t sera identique à un flottant
+normal. Par contre, si le type est abstrait (donc que son implémentation
+est cachée), le compilateur le différenciera d'un type flottant. 
+

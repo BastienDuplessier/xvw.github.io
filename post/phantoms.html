@@ -37,14 +37,77 @@
 <span class="kw">let</span> km x = <span class="dt">Km</span> x
 
 <span class="kw">let</span> cm_to_km = <span class="kw">function</span> 
-  | <span class="dt">Cm</span> x -&gt; <span class="dt">Km</span> (x *. 1000.0)
+  | <span class="dt">Cm</span> x -&gt; <span class="dt">Km</span> (x *. 100000.0)
   | _ -&gt; raise <span class="dt">IllegalMeasureData</span>
 
 <span class="kw">let</span> km_to_cm = <span class="kw">function</span> 
-  | <span class="dt">Km</span> x -&gt; <span class="dt">Cm</span> (x /. 1000.0)
+  | <span class="dt">Km</span> x -&gt; <span class="dt">Cm</span> (x /. 100000.0)
   | _ -&gt; raise <span class="dt">IllegalMeasureData</span></code></pre>
 <p>Cette manière de procéder semble correcte, et si par exemple je tente une conversion sur une valeur invalide, par exemple <code>let test = km_of_cm (cm 10.0)</code>, mon code renverra une erreur <code>IllegalMeasureData</code>, et ce à la compilation. Cependant, si l'erreur se déclenche, c'est uniquement parce que la variable <em>test</em> évalue directement l'expression <code>km_of_cm (cm 10.0)</code>. Voyons ce qu'il se passe si nous essayons de compiler notre code avec cette déclaration : <code>let test () = km_of_cm (cm 10.0)</code>. Cette fois-ci, la compilation fonctionne.</p>
 <p>Ce qui prouve que les erreurs ne sont pas vérifiées à la compilation. Car les fonction <code>km_to_cm</code> et <code>cm_to_km</code> ont le types <code>measure -&gt; measure</code>. Et donc une incohérence telle que passer un Kilomètres à la fonction <code>cm_to_km</code> ne peut être détectée réellement à la compilation.</p>
+<h2 id="implémentation-des-types-fantômes">Implémentation des types fantômes</h2>
+<p>Nous avons vu que les variants classiques ne permettent pas assez de vérification pour distinguer des données au sein d'un même type à la compilation (car oui, il serait possible de distinguer chaque unité de mesure dans des types différents, de cette manière :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">module</span> Measure =
+<span class="kw">struct</span>
+  <span class="kw">type</span> km = <span class="dt">Km</span> <span class="kw">of</span> float
+  <span class="kw">type</span> cm = <span class="dt">Cm</span> <span class="kw">of</span> float
+<span class="kw">end</span></code></pre>
+<p>Cependant ce n'est absolument pas confortable et ce n'est pas réellement l'intérêt de cet article). Donc avant de définir et de proposer une implémentation, nous allons devoir (re)voir quelques outils en relation avec le langage OCaml.</p>
+<h3 id="les-variants-polymorphiques">Les variants polymorphiques</h3>
+<p>Bien que très utiles dans le <em>design</em> d'application, les variants possèdent des limitations. Par exemple, le fait qu'un type Somme ne puisse être enrichi de constructeurs (ce qui n'est plus tout à fait vrai depuis <em>OCaml 4.02.0</em>), mais aussi le fait qu'un constructeur ne puisse appartenir qu'à un seul type. Les variants polymorphes s'extraient de ces deux contraintes et peuvent même être déclarés à la volées, sans appartenir à un type prédéfini. La définition d'un constructeur polymorphe est identique à un constructeur normal (il commence par une majuscule) mais est précédé du caractère <em>`</em>.</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"># <span class="kw">let</span> a = <span class="dt">`Truc</span> 9;;
+<span class="kw">val</span> a : [&gt; <span class="dt">`Truc</span> <span class="kw">of</span> <span class="dt">int</span> ] = <span class="dt">`Truc</span> 9
+# <span class="kw">let</span> b = <span class="dt">`Truc</span> <span class="st">&quot;test&quot;</span>;;
+<span class="kw">val</span> b : [&gt; <span class="dt">`Truc</span> <span class="kw">of</span> <span class="dt">string</span> ] = <span class="dt">`Truc</span> <span class="st">&quot;test&quot;</span></code></pre>
+<p>Comme vous pouvez le voir, je me suis servi deux fois du constructeur <em>`Truc</em> en lui donnant des arguments à type différent et sans l'avoir déclaré.</p>
+<h4 id="borne-superieur-et-inférieur">Borne superieur et inférieur</h4>
+<p>L'usage des variants polymorphes introduit une notation de retour différente de celle des variants normaux. Par exemple :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> to_int = <span class="kw">function</span> 
+  | <span class="dt">`Integer</span> x -&gt; x 
+  | <span class="dt">`Float</span> x -&gt; int_of_float x;;
+
+<span class="kw">let</span> to_int&#39; = <span class="kw">function</span> 
+  | <span class="dt">`Integer</span> x -&gt; x 
+  | <span class="dt">`Float</span> x -&gt; int_of_float x
+  | _ -&gt; 0
+
+# <span class="kw">val</span> to_int : [&lt; <span class="dt">`Float</span> <span class="kw">of</span> float | <span class="dt">`Integer</span> <span class="kw">of</span> <span class="dt">int</span> ] -&gt; <span class="dt">int</span> = &lt;fun&gt;
+# <span class="kw">val</span> to_int&#39; :[&gt; <span class="dt">`Float</span> <span class="kw">of</span> float | <span class="dt">`Integer</span> <span class="kw">of</span> <span class="dt">int</span> ] -&gt; <span class="dt">int</span> = &lt;fun&gt;</code></pre>
+<p>Ce que l'on remarque c'est que le chevron varie. Dans le cas où la fonction n'évalue <em>que</em> les constructeurs <em>Integer</em> et <em>Float</em>, le chevron est <code>&lt;</code>. Si la fonction peut potentiellement évaluer autre chose, le chevron est <code>&gt;</code>.</p>
+<ul>
+<li><code>[&lt; K]</code> indique que le type ne peut contenir que K</li>
+<li><code>[&gt; K]</code> indique que le type peut contenir au moins K</li>
+</ul>
+<p>Nous verrons que cette restriction sur les entrées permettra d'affiner le typage de fonctions.</p>
+<h4 id="restriction-sur-les-variants-polymorphes">Restriction sur les variants polymorphes</h4>
+<p>Les variants polymorphes ne permettent tout de même pas de faire des choses comme :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> truc = <span class="kw">function</span>
+  | <span class="dt">`A</span> -&gt; 0
+  | <span class="dt">`A</span> x -&gt; x </code></pre>
+<p>Au sein d'une <em>même</em> fonction, on ne peut pas utiliser un <em>même</em> variant avec des arguments différents. De mon point de vue, c'est plus logique que limitant. Mais rien n'empêche de faire deux fonctions, qui elles utilisent des variants polymorphes à arguments variables.</p>
+<h4 id="nommer-les-variants-polymorphes">Nommer les variants polymorphes</h4>
+<p>Bien que l'on puisse les nommer à l'usage, il peut parfois être confortable de spécifier des variants polymorphes dans un type nommé. ( Ne serait-ce que pour le confort de la réutilisation). Leur syntaxe (que nous verrons un peu plus bas) est assez proche des déclaration de variants classique, cependant, <strong>on ne peut pas</strong> spécifier la borne dans la définition de type de variants polymorphes. Ce qui est parfaitement logique car un type ouvert (donc borné) ne correspond pas à un seul type mais à une collection de types.</p>
+<p>A la différence des variants normaux, les variants polymorphes se déclarent dans une liste dont les différentes énumérations sont séparés par un pipe. Par exemple :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">type</span> poly_color = [<span class="dt">`Red</span> <span class="kw">of</span> <span class="dt">int</span> | <span class="dt">`Green</span> <span class="kw">of</span> <span class="dt">int</span> | <span class="dt">`Blue</span> <span class="kw">of</span> <span class="dt">int</span>]</code></pre>
+<p>Il est évidemment possible d'utiliser les variants polymorphes dans la déclaration de variants normaux, par exemple :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">type</span> color_list =
+| <span class="dt">Empty</span>
+| <span class="dt">Cons</span> <span class="kw">of</span> ( [<span class="dt">`Red</span> <span class="kw">of</span> <span class="dt">int</span> | <span class="dt">`Green</span> <span class="kw">of</span> <span class="dt">int</span> | <span class="dt">`Blue</span> <span class="kw">of</span> <span class="dt">int</span>]  *  color_list)</code></pre>
+<p>Par contre, même si dans les définitions de types on ne peut pas spécifier de borne, on peut le faire dans les contraintes de types des fonctions. Et c'est grâce à cette autorisation que nous utiliserons les types fantômes avec des variants polymorphes.</p>
+<h4 id="conclusion-sur-les-variants-polymorphes">Conclusion sur les variants polymorphes</h4>
+<p>Les variants polymorphes permettent plus de flexibilité que les variants classique. Cependant, ils ont aussi leurs petits soucis :</p>
+<ul>
+<li>Ils entraînent des petites pertes d'efficacité (mais ça, c'est superflu)</li>
+<li>Ils diminuent le nombre de vérifications statiques</li>
+<li>Ils introduisent des erreurs de typage très complexe</li>
+</ul>
+<p>En conclusion, j'ai introduit les variants polymorphes car nous nous en serviront pour les types fantômes, cependant, il est conseillé de ne s'en servir qu'en cas de réel besoin.</p>
+<h3 id="a-lassault-des-types-fantômes">A l'assault des types fantômes</h3>
+<p>Après une très longue introduction et une légère mise en place des pré-requis, nous allons expliquer ce que sont les types fantômes. Ensuite, nous évoquerons quelques cas de figures.</p>
+<blockquote>
+<p>Concrètement, un type fantôme n'est rien de plus qu'un type abstrait paramétré dont au moins un des paramètres n'est présent que pour donner des informations sur comment utiliser ce type.</p>
+</blockquote>
+<p>Concrètement, voici un exemple de type fantôme : <code>type 'a t = float</code>. Si le type n'est pas abstrait, le type t sera identique à un flottant normal. Par contre, si le type est abstrait (donc que son implémentation est cachée), le compilateur le différenciera d'un type flottant.</p>
 
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
