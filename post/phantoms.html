@@ -37,11 +37,11 @@
 <span class="kw">let</span> km x = <span class="dt">Km</span> x
 
 <span class="kw">let</span> cm_to_km = <span class="kw">function</span> 
-  | <span class="dt">Cm</span> x -&gt; <span class="dt">Km</span> (x *. 100000.0)
+  | <span class="dt">Cm</span> x -&gt; <span class="dt">Km</span> (x *. <span class="fl">100000.0</span>)
   | _ -&gt; raise <span class="dt">IllegalMeasureData</span>
 
 <span class="kw">let</span> km_to_cm = <span class="kw">function</span> 
-  | <span class="dt">Km</span> x -&gt; <span class="dt">Cm</span> (x /. 100000.0)
+  | <span class="dt">Km</span> x -&gt; <span class="dt">Cm</span> (x /. <span class="fl">100000.0</span>)
   | _ -&gt; raise <span class="dt">IllegalMeasureData</span></code></pre>
 <p>Cette manière de procéder semble correcte, et si par exemple je tente une conversion sur une valeur invalide, par exemple <code>let test = km_of_cm (cm 10.0)</code>, mon code renverra une erreur <code>IllegalMeasureData</code>, et ce à la compilation. Cependant, si l'erreur se déclenche, c'est uniquement parce que la variable <em>test</em> évalue directement l'expression <code>km_of_cm (cm 10.0)</code>. Voyons ce qu'il se passe si nous essayons de compiler notre code avec cette déclaration : <code>let test () = km_of_cm (cm 10.0)</code>. Cette fois-ci, la compilation fonctionne.</p>
 <p>Ce qui prouve que les erreurs ne sont pas vérifiées à la compilation. Car les fonction <code>km_to_cm</code> et <code>cm_to_km</code> ont le types <code>measure -&gt; measure</code>. Et donc une incohérence telle que passer un Kilomètres à la fonction <code>cm_to_km</code> ne peut être détectée réellement à la compilation.</p>
@@ -55,8 +55,8 @@
 <p>Cependant ce n'est absolument pas confortable et ce n'est pas réellement l'intérêt de cet article). Donc avant de définir et de proposer une implémentation, nous allons devoir (re)voir quelques outils en relation avec le langage OCaml.</p>
 <h3 id="les-variants-polymorphiques">Les variants polymorphiques</h3>
 <p>Bien que très utiles dans le <em>design</em> d'application, les variants possèdent des limitations. Par exemple, le fait qu'un type Somme ne puisse être enrichi de constructeurs (ce qui n'est plus tout à fait vrai depuis <em>OCaml 4.02.0</em>), mais aussi le fait qu'un constructeur ne puisse appartenir qu'à un seul type. Les variants polymorphes s'extraient de ces deux contraintes et peuvent même être déclarés à la volées, sans appartenir à un type prédéfini. La définition d'un constructeur polymorphe est identique à un constructeur normal (il commence par une majuscule) mais est précédé du caractère <em>`</em>.</p>
-<pre class="sourceCode ocaml"><code class="sourceCode ocaml"># <span class="kw">let</span> a = <span class="dt">`Truc</span> 9;;
-<span class="kw">val</span> a : [&gt; <span class="dt">`Truc</span> <span class="kw">of</span> <span class="dt">int</span> ] = <span class="dt">`Truc</span> 9
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"># <span class="kw">let</span> a = <span class="dt">`Truc</span> <span class="dv">9</span>;;
+<span class="kw">val</span> a : [&gt; <span class="dt">`Truc</span> <span class="kw">of</span> <span class="dt">int</span> ] = <span class="dt">`Truc</span> <span class="dv">9</span>
 # <span class="kw">let</span> b = <span class="dt">`Truc</span> <span class="st">&quot;test&quot;</span>;;
 <span class="kw">val</span> b : [&gt; <span class="dt">`Truc</span> <span class="kw">of</span> <span class="dt">string</span> ] = <span class="dt">`Truc</span> <span class="st">&quot;test&quot;</span></code></pre>
 <p>Comme vous pouvez le voir, je me suis servi deux fois du constructeur <em>`Truc</em> en lui donnant des arguments à type différent et sans l'avoir déclaré.</p>
@@ -69,10 +69,10 @@
 <span class="kw">let</span> to_int&#39; = <span class="kw">function</span> 
   | <span class="dt">`Integer</span> x -&gt; x 
   | <span class="dt">`Float</span> x -&gt; int_of_float x
-  | _ -&gt; 0
+  | _ -&gt; <span class="dv">0</span>
 
-# <span class="kw">val</span> to_int : [&lt; <span class="dt">`Float</span> <span class="kw">of</span> float | <span class="dt">`Integer</span> <span class="kw">of</span> <span class="dt">int</span> ] -&gt; <span class="dt">int</span> = &lt;fun&gt;
-# <span class="kw">val</span> to_int&#39; :[&gt; <span class="dt">`Float</span> <span class="kw">of</span> float | <span class="dt">`Integer</span> <span class="kw">of</span> <span class="dt">int</span> ] -&gt; <span class="dt">int</span> = &lt;fun&gt;</code></pre>
+# <span class="kw">val</span> to_int : [&lt; <span class="dt">`Float</span> <span class="kw">of</span> float | <span class="dt">`Integer</span> <span class="kw">of</span> <span class="dt">int</span> ] -&gt; <span class="dt">int</span> = &lt;<span class="kw">fun</span>&gt;
+# <span class="kw">val</span> to_int&#39; :[&gt; <span class="dt">`Float</span> <span class="kw">of</span> float | <span class="dt">`Integer</span> <span class="kw">of</span> <span class="dt">int</span> ] -&gt; <span class="dt">int</span> = &lt;<span class="kw">fun</span>&gt;</code></pre>
 <p>Ce que l'on remarque c'est que le chevron varie. Dans le cas où la fonction n'évalue <em>que</em> les constructeurs <em>Integer</em> et <em>Float</em>, le chevron est <code>&lt;</code>. Si la fonction peut potentiellement évaluer autre chose, le chevron est <code>&gt;</code>.</p>
 <ul>
 <li><code>[&lt; K]</code> indique que le type ne peut contenir que K</li>
@@ -82,7 +82,7 @@
 <h4 id="restriction-sur-les-variants-polymorphes">Restriction sur les variants polymorphes</h4>
 <p>Les variants polymorphes ne permettent tout de même pas de faire des choses comme :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> truc = <span class="kw">function</span>
-  | <span class="dt">`A</span> -&gt; 0
+  | <span class="dt">`A</span> -&gt; <span class="dv">0</span>
   | <span class="dt">`A</span> x -&gt; x </code></pre>
 <p>Au sein d'une <em>même</em> fonction, on ne peut pas utiliser un <em>même</em> variant avec des arguments différents. De mon point de vue, c'est plus logique que limitant. Mais rien n'empêche de faire deux fonctions, qui elles utilisent des variants polymorphes à arguments variables.</p>
 <h4 id="nommer-les-variants-polymorphes">Nommer les variants polymorphes</h4>
@@ -112,7 +112,48 @@
 <h2 id="distinguer-des-unités-de-mesure">Distinguer des unités de mesure</h2>
 <p>Si cet article a été introduit via une erreur dûe à des unités de mesure, ce n'est pas tout à fait innocent. Nous avions vu que via des variants classiques, il n'était à priori pas possible (en gardant un confort d'utilisation) de distinguer à la compilation des unités de mesures. Nous allons voir qu'au moyen des types fantômes, c'est très simple.</p>
 <p>Par soucis de lisibilité, j'utiliserai des sous-modules. Cependant, ce n'est absolument pas obligatoire.</p>
-<p>Commen</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">module</span> Measure :
+<span class="kw">sig</span> 
+  <span class="kw">type</span> &#39;a t
+  <span class="kw">val</span> km : float -&gt; [<span class="dt">`Km</span>] t 
+  <span class="kw">val</span> cm : float -&gt; [<span class="dt">`Cm</span>] t
+<span class="kw">end</span> = <span class="kw">struct</span>
+  <span class="kw">type</span> &#39;a t = float
+  <span class="kw">let</span> km f = f
+  <span class="kw">let</span> cm f = f
+<span class="kw">end</span></code></pre>
+<p>Ce module produit offre des fonctions qui produisent des valeurs de type <code>Measure.t</code>, mais ces données sont décorées. Les kilomètres et les centimètres ont donc une différence structurelles. Imaginons que nous enrichissions notre module d'une fonction addition, dont le prototype serait : <code>'a t -&gt; 'a t -&gt; 'a t</code>, et le code ne serait qu'un appel de <code>(+.)</code> (l'addition flottante) :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">module</span> Measure :
+<span class="kw">sig</span> 
+  <span class="kw">type</span> &#39;a t
+  <span class="kw">val</span> km : float -&gt; [<span class="dt">`Km</span>] t 
+  <span class="kw">val</span> cm : float -&gt; [<span class="dt">`Cm</span>] t
+  <span class="kw">val</span> ( + ) : &#39;a t -&gt; &#39;a t -&gt; &#39;a t
+<span class="kw">end</span> = <span class="kw">struct</span>
+  <span class="kw">type</span> &#39;a t = float
+  <span class="kw">let</span> km f = f
+  <span class="kw">let</span> cm f = f
+  <span class="kw">let</span> ( + ) =  ( +. )
+<span class="kw">end</span></code></pre>
+<p>Que se passe t-il si je fais l'addition de centimètres et de kilomètres (créés au moyen des fonctions <code>km</code> et <code>cm</code>) ? Le code plantera à la compilation car il est indiqué dans le prototype de la fonction que le paramètre du type t (<code>'a</code>) doit impérativement être le même pour les deux membres de l'addition. Nous avons donc une distinction, au niveau du typeur, d'unités de mesure, pourtant représentée via des entiers.</p>
+<p>Retournons à notre exemple de conversion, cette fois enrichissons notre module des fonctions de conversions :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">module</span> Measure :
+<span class="kw">sig</span> 
+  <span class="kw">type</span> &#39;a t
+  <span class="kw">val</span> km : float -&gt; [<span class="dt">`Km</span>] t 
+  <span class="kw">val</span> cm : float -&gt; [<span class="dt">`Cm</span>] t
+  <span class="kw">val</span> ( + ) : &#39;a t -&gt; &#39;a t -&gt; &#39;a t
+  <span class="kw">val</span> km_of_cm : [<span class="dt">`Cm</span>] t -&gt; [<span class="dt">`Km</span>] t  
+  <span class="kw">val</span> cm_of_km : [<span class="dt">`Km</span>] t -&gt; [<span class="dt">`Cm</span>] t
+<span class="kw">end</span> = <span class="kw">struct</span>
+  <span class="kw">type</span> &#39;a t = float
+  <span class="kw">let</span> km f = f
+  <span class="kw">let</span> cm f = f
+  <span class="kw">let</span> ( + ) = ( +. )
+  <span class="kw">let</span> km_of_cm f = f /. <span class="fl">10000.0</span>
+  <span class="kw">let</span> cm_of_km f = f *. <span class="fl">10000.0</span>
+<span class="kw">end</span></code></pre>
+<p>Cette fois-ci, le typeur refusera formellement des conversions improbables.</p>
 
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>

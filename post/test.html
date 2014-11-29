@@ -26,9 +26,9 @@
 <h2 id="exemples-de-code">Exemples de code</h2>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> fact = 
   <span class="kw">let</span> <span class="kw">rec</span> fact acc = <span class="kw">function</span> 
-  | n <span class="kw">when</span> n &lt; 2 -&gt; acc 
+  | n <span class="kw">when</span> n &lt; <span class="dv">2</span> -&gt; acc 
   | n -&gt; fact (acc * n) (pred n)
-<span class="kw">in</span> fact 1</code></pre>
+<span class="kw">in</span> fact <span class="dv">1</span></code></pre>
 <h2 id="tentative-de-mathématiques">Tentative de mathématiques</h2>
 <p><br /><span class="math"><em>λ</em><em>x</em> ⊕ 9</span><br /></p>
 

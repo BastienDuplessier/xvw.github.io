@@ -253,5 +253,71 @@ Nous allons voir qu'au moyen des types fantômes, c'est très simple.
 Par soucis de lisibilité, j'utiliserai des sous-modules. Cependant, ce
 n'est absolument pas obligatoire.
 
-Commen
+```ocaml
+module Measure :
+sig 
+  type 'a t
+  val km : float -> [`Km] t 
+  val cm : float -> [`Cm] t
+end = struct
+  type 'a t = float
+  let km f = f
+  let cm f = f
+end
+```
+
+Ce module produit offre des fonctions qui produisent des valeurs de type
+`Measure.t`, mais ces données sont décorées. Les kilomètres et les
+centimètres ont donc une différence structurelles.
+Imaginons que nous enrichissions notre module d'une fonction addition,
+dont le prototype serait : `'a t -> 'a t -> 'a t`, et le code ne serait
+qu'un appel de `(+.)` (l'addition flottante) :
+
+
+```ocaml
+module Measure :
+sig 
+  type 'a t
+  val km : float -> [`Km] t 
+  val cm : float -> [`Cm] t
+  val ( + ) : 'a t -> 'a t -> 'a t
+end = struct
+  type 'a t = float
+  let km f = f
+  let cm f = f
+  let ( + ) =  ( +. )
+end
+```
+
+Que se passe t-il si je fais l'addition de centimètres et de kilomètres
+(créés au moyen des fonctions `km` et `cm`) ? Le code plantera à la compilation
+car il est indiqué dans le prototype de la fonction que le paramètre
+du type t (`'a`) doit impérativement être le même pour les deux membres
+de l'addition. Nous avons donc une distinction, au niveau du typeur, d'unités
+de mesure, pourtant représentée via des entiers.
+
+Retournons à notre exemple de conversion, cette fois enrichissons notre module
+des fonctions de conversions :
+
+```ocaml
+module Measure :
+sig 
+  type 'a t
+  val km : float -> [`Km] t 
+  val cm : float -> [`Cm] t
+  val ( + ) : 'a t -> 'a t -> 'a t
+  val km_of_cm : [`Cm] t -> [`Km] t  
+  val cm_of_km : [`Km] t -> [`Cm] t
+end = struct
+  type 'a t = float
+  let km f = f
+  let cm f = f
+  let ( + ) = ( +. )
+  let km_of_cm f = f /. 10000.0
+  let cm_of_km f = f *. 10000.0
+end
+```
+
+Cette fois-ci, le typeur refusera formellement des conversions improbables.
+
 
