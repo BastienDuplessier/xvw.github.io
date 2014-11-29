@@ -319,5 +319,11 @@ end
 ```
 
 Cette fois-ci, le typeur refusera formellement des conversions improbables.
+Dans cet exemple, j'aurais pu utiliser autre chose que des variants
+polymorphes pour distinguer mes centimètres de mes kilomètres. Cependant,
+nous allons voir qu'il est possible de se servir des bornes pour affiner
+le typeur. Et le fait de ne pas devoir les déclarer les rends agréable
+à utiliser.
 
+## Du HTML valide
 

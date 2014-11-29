@@ -153,7 +153,8 @@
   <span class="kw">let</span> km_of_cm f = f /. <span class="fl">10000.0</span>
   <span class="kw">let</span> cm_of_km f = f *. <span class="fl">10000.0</span>
 <span class="kw">end</span></code></pre>
-<p>Cette fois-ci, le typeur refusera formellement des conversions improbables.</p>
+<p>Cette fois-ci, le typeur refusera formellement des conversions improbables. Dans cet exemple, j'aurais pu utiliser autre chose que des variants polymorphes pour distinguer mes centimètres de mes kilomètres. Cependant, nous allons voir qu'il est possible de se servir des bornes pour affiner le typeur. Et le fait de ne pas devoir les déclarer les rends agréable à utiliser.</p>
+<h2 id="du-html-valide">Du HTML valide</h2>
 
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
