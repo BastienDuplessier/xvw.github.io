@@ -2,8 +2,6 @@
 % Xavier Van de Woestyne
 % Novembre 2014
 
-# Les types fantômes en OCaml
-
 > Cet article n'a pas grand chose d'inédit. Il s'agit d'une occasion de
 > présenter une utilisation amusante d'un système de type au
 > travers du langage OCaml pour répondre à une problématique pouvant
