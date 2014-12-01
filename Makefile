@@ -17,7 +17,7 @@ post: $(RAWS)
 pdf: $(PDFS)
 
 %.pdf: $(RAW)/%.md
-	@pandoc $< -o $(PDF)/$@
+	@pandoc -s --webtex $< -o $(PDF)/$@
 
 %.html: $(RAW)/%.md
 	@$(eval TITLE :=  $(shell sed -n '0,/^\%/p' $< | sed -re 's/^\% *//'))
