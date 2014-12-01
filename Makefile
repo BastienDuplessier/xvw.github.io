@@ -1,4 +1,5 @@
 POST = post
+PDF = pdf
 RAW =  raw
 SRC = src
 RAWS = $(patsubst $(RAW)/%.md,%.html,$(wildcard $(RAW)/*.md))
@@ -18,6 +19,8 @@ post: $(RAWS)
 	@touch $(POST)/$@
 	@sed -re "s/\{\{TITLE\}\}/$(TITLE)/" $(SRC)/header.html > $(POST)/$@
 	@pandoc $< >> $(POST)/$@
+	@pandoc $< -o $<.pdf
+	@mv $<.pdf $(PDF)
 	@cat $(SRC)/footer.html >> $(POST)/$@
 	@echo $(POST)/$@ : [$(TITLE)] created
 

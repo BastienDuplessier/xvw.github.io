@@ -1,8 +1,8 @@
-% Les types fantômes
+% Les types fantômes en OCaml
 % Xavier Van de Woestyne
 % Novembre 2014
 
-# Les types fantômes
+# Les types fantômes en OCaml
 
 > Cet article n'a pas grand chose d'inédit. Il s'agit d'une occasion de
 > présenter une utilisation amusante d'un système de type au
@@ -325,5 +325,215 @@ nous allons voir qu'il est possible de se servir des bornes pour affiner
 le typeur. Et le fait de ne pas devoir les déclarer les rends agréable
 à utiliser.
 
+
 ## Du HTML valide
+
+Dans plusieurs framework de développement web, il arrive que l'on se serve
+de la syntaxe des fonctions du langage pour l'écriture de HTML. C'est le
+cas, par exemple de [Yaws](http://yaws.hyber.org), un serveur web pour créer
+des applications web en Erlang, qui se sert des tuple et des atomes de erlang
+pour représenter du HTML. De même que [Ocsigen](http://www.ocsigen.org), le
+framework de développement web OCaml, qui propose, entre autre, une écriture
+fonctionnelle. Il existe plusieurs intérêt à cet usage. Le premier étant
+le plus évident, c'est généralement beaucoup plus rapide à écrire !
+
+> En effet, en HTML, beaucoup de balises doivent être fermées, les
+> attributs doivent être entre guillemets et lié par un égal, bref,
+> énormément de verbosité. ([Une petite blague](http://homepages.inf.ed.ac.uk/wadler/language.pdf)
+> trouvée sur le site de Philip Wadler)
+
+Dans un langage comme OCaml, le typage (et les types fantômes) nous
+permettrons d'encoder une partie du DTD du HTML pour ne permettre de créer
+que des pages valides (selon le W3C) et donc amoindrir fortemment le flux
+de travail (ne devant plus passer par de la vérification avec les outils
+du W3C et sachant que si une page compile, c'est qu'elle est bonne).
+Un exemple classique, une balise `span` ne peut pas contenir de balise
+`div`. Et de manière plus générale, aucune balise de type block ne peut
+être contenue dans une balise de type inline.
+
+### sous-typage, covariance et contravariance
+Les variants polymorphes introduisent une notion de sous-typage dans le
+langage OCaml. Concrètement, un premier type (défini par des constructeurs
+polymrophes) fermé est un sous-type d'un autre type (défini lui aussi par des
+constructeurs polymorphes) fermé, si tous les constructeurs du premier
+sont inclus dans les constructeurs du second.
+
+En OCaml, le fait de considérer un sous-type comme son type parent est possible
+au moyen d'une coersion, via l'opérateur `:>`, pour diminuer le sous-type
+dans son sur-type. Concrètement la coersion d'une valeur d'un type `t1` en
+type `t2` s'écrit de cette manière : `valeur : t1 :> t2`.
+Le sous-typage des variants polymorphes introduit des règles particulières
+dans le cas des fonctions :
+
+*   Le type de retour d'une fonction suit la même direction de sous-typage
+que le type fonctionnel, on dit qu'il est **covariant** (et noté +)
+*   Le type du paramètre va dans le sens inverse, on dit qu'il est
+**contravariant** (et noté -).
+
+Le compilateur de OCaml peut déterminer si un type est un sous-type d'un
+autre pour les types qu'il connait. Il est donc impossible qu'il déduise
+le sous-typage des types abstraits. Pour permettre au compilateur de
+faire la relation de sous-typage, on annotera un type abstrait d'un + s'il
+est covariant et d'un - s'il est contravariant:
+
+```ocaml
+type (+'a) t (* Type covariant *)
+type (-'a) t (* Type contravariant *)
+```
+
+Cette précision est importante car nous nous servirons de la covariance et
+de la contravariance pour produire des documents HTML statiquement typés.
+
+### Organisation par les types
+Pour produire un document HTML, il faut d'abord isoler les constituants d'un
+documents HTML. Pour ma part, j'ai décidé de fragmenter les balises en trois
+catégories :
+
+*   Le texte brute (pcdata)
+*   Les balises feuilles (`<br />`, `<hr />`) par exemple
+*   Les balises noeuds (des balises pouvant en contenir d'autres).
+
+Ces balises seront regroupées, elle même en plusieurs sous-catégories, par
+exemple les balises dites *inlines*, (comme `<span>`) ne pouvant pas prendre
+des balises dites *block* (comme `<div>` par exemple).
+
+Je suggère cette implémentation :
+
+```ocaml
+module HTML : 
+sig 
+  type (+'a) tag
+end = struct
+  type raw_tag = 
+    | Pcdata of string 
+    | Leaf of string 
+    | Node of string * raw_tag list 
+  type 'a tag = raw_tag
+end
+```
+Le fait que les feuilles et les noeuds prennent des chaînes de caractères
+dans leur signature permettra de parser une arborescence HTML typée et d'en
+produire le HTML textuel correspondant.  
+Nous pouvons nous ateler à la construction de balises, au moyen de fonctions.
+
+### Construction de balises
+Les balises sont assez simple à construire. Commençons par la balise `Pcdata`, dont
+la principale contrainte est de ne pouvoir prendre qu'une chaine de caractères :
+
+```ocaml
+val pcdata : string -> [`Pcdata] tag
+let pcdata x = Pcdata x
+```
+
+L'implémentation de `<hr />` et `<br />` est assez évidente, et ne demande pas
+de précisions :
+
+```ocaml
+val hr : [`Hr] tag
+val br : [`Br] tag
+let hr = Leaf "hr"
+let br = Leaf "br"
+```
+
+Passons maintenant aux implémentation les plus intéressantes. Une `<div>` peut
+à priori prendre n'importe quel type de balise (ce n'est pas tout à fait vrai,
+mais nous partirons de ce principe pour l'exemple), son implémentation est donc
+elle aussi assez facile :
+
+```ocaml
+val div : 'a tag list -> [`Div] tag
+let div childs = Node ("div", childs)
+```
+
+Les `<span>` sont un peu différent car ces derniers ne peuvent contenir **que** des
+`<span>` ou des `Pcdata`. Il faut donc restreindre son dommaine d'entrée :
+
+```ocaml
+val span : [< `Span | `Pcdata ] tag list -> [> `Span] tag
+let span childs = Node ("span", childs)
+```
+
+Cette fois, la décoration du type `tag` restreind les entrées à seulement des données
+`<span>` ou des `Pcdata`. (Oui, la borne est superieur, donc on restreind l'entrée
+à ces deux types). Pour rappel, le code général du module est :
+
+```ocaml
+module HTML : 
+sig 
+  type (+'a) tag
+  val pcdata : string -> [`Pcdata] tag
+  val hr : [<`Hr] tag
+  val br : [<`Br] tag
+  val div : 'a tag list -> [`Div] tag
+  val span : [< `Span | `Pcdata ] tag list -> [`Span] tag
+end = struct
+  type raw_tag = 
+    | Pcdata of string 
+    | Leaf of string 
+    | Node of string * raw_tag list 
+  type 'a tag = raw_tag
+  let pcdata x = Pcdata x
+  let hr = Leaf "hr"
+  let br = Leaf "br"
+  let div childs = Node ("div", childs)
+  let span childs = Node ("span", childs) 
+end
+```
+
+Je vous inviter maintenant à saisir quelques expressions pour tester notre code,
+par exemple : `HTML.(span [br])` qui devrait échouer, ou encore `HTML.(span [pcdata "hello"])`,
+qui lui devrait réussir. Un autre exemple un peu plus long :
+
+```ocaml
+let open HTML in
+  div [
+    span [pcdata "Hello world"];
+	hr;
+	span [pcdata "Hello Nuki"];
+	br;
+  ]
+```
+
+Ce code est parfaitement valide et ne provoque donc aucune erreur. Par contre, si le dernier
+`<span>` avait été : `span [div [pcdata "Hello Nuki"]]`, une erreur aurait été levée. 
+
+### Retour d'expérience sur la productiond de HTML valide
+L'exercice est intéressant et permet de comprendre le rôle des variants polymorphes dans la
+décoration de types, via les types fantômes. C'est une méthode de ce genre (pas identique,
+ceci dit, sans aucun doûte plus riche) qui est utilisée dans [TyXML](http://ocsigen.org/tyxml/),
+un des composant de [Ocsigen](http://ocsigen.org) pour rendre la production de XML invalide,
+absolument impossible. (Il peut s'utiliser au moyen d'une extension de syntaxe).
+
+Je trouve cette manière de procéder assez astucieuse. Même si cet article n'en présente qu'une
+infime partie. En effet, il faudrait aller plus loin en typant les attributs etc. cependant, la
+vocation de cette section n'est que de montrer un rapide exemple d'utilisation des types
+fantômes.
+
+## Requêtes SQL statiquement typées
+Une fois de plus, mon exemple est emprunté au cadriciel [Ocsigen](http://ocsigen.org). En effet,
+dans beaucoup de langage web, lorsque l'on doit effectuer une communication avec une
+base de données, il est courrant de construire la requête dans une chaîne de caractère, qui
+est un moyen expressif de construire du SQL et de l'envoyer au serveur de la base
+de données, lui délégant la vérification de la formation de cette dernière.
+C'est une manière de faire peu fiable, qui provoque des erreurs d'exécution de code. Ce que
+le programmeur OCaml aime éviter.
+
+[Macaque](http://ocsigen.org/macaque/) est une bibliothèque permettant de formuler
+des requêtes vérifiée à la compilation. Pour cet exemple, je ne rentrerai pas dans
+les détails (car c'est fort long et sans dépasse sans aucun doute mes compétences), mais
+Macaque s'appuie sur des types fantômes pour décorer des types de OCaml d'informations
+relatives à SQL.
+Pour l'avoir utilisé Macaque est très utile (et agréable) et offre le confort de
+la validation de requêtes (syntaxique et logique).
+
+## Conclusion
+
+Je terminerai cette brève présentation en limitant la notion de type fantômes
+à un (ou plusieurs labels) donnant des informations d'utilisations complémentaires
+à des types. Cette étiquettage permet une vérification statique d'un bon usage de données.
+Les inconvénients sont l'expressivité limité et le fait que ça introduise parfois
+des erreurs de types assez lourdes à lire.
+
+Les types fantômes sont même utilisés dans la bibliothèque standard de OCaml et donc
+ne sont pas que des *features* un peu trop particulière.
 
