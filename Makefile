@@ -28,5 +28,8 @@ pdf: $(PDFS)
 	@cat $(SRC)/footer.html >> $(POST)/$@
 	@echo $(POST)/$@ : [$(TITLE)] created
 
-clean:
-	rm -rf ../post/*.html
+clean_html:
+	rm -rf $(POST)/*.html
+clean_pdf:
+	rm -rf $(PDF)/*.pdf
+clean: clean_html clean_pdf
