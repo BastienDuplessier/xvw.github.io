@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Développement d'applications web  avec Ocsigen</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../default.css">
+    <script src="../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="content">
+      <a href="../index.html">Retourner a l'index</a>
+      <hr id="top" name="top"/>
+      <div id="innercontent">
+<h1>Développement d'applications web avec Ocsigen</h1>
+<blockquote>
+<p>Pendant très longtemps, j'ai été amené à concevoir des applications web. J'ai eu l'occasion d'expérimenter plusieurs technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et Yaws + Erlang). Je dois avouer n'avoir été que trop rarement satisfait par ces outils, principalement car depuis ma découverte avec les langages fonctionnels statiquement typés, j'ai réellement du mal à m'en passer. C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été véritablement emballé. Cependant, Ocsigen est, actuellement, pauvre en ressource et assez dépaysant (cette opinion n'est absolument pas à prendre comme un reproche mais plus comme une constatation et s'explique par l'innovation démontrée dans Ocsigen et sa jeunesse)), j'ai donc décidé de lui accorder un petit article proposant à sa fin, une implémentation pratique où chaque étape sera décrite !</p>
+</blockquote>
+<h2 id="présentation-sommaire-de-ocsigen">Présentation sommaire de Ocsigen</h2>
+<p><a href="http://www.ocsigen.org">Ocsigen</a> est une suite de logiciels libres écrite en OCaml, développée par le laboratoire français <a href="http://www.pps.univ-paris-diderot.fr/">PPS</a>. Son objectif principal réside dans la conception d’applications web fiables au moyen du langage de programmation <a href="http://www.ocaml.org">OCaml</a> qui est, en plus d’être extrêmement fiable, très expressif.<br />Ocsigen propose des réponses à des problèmatiques récurrentes du développement web, dans certains cas assez différentes des solutions proposées par d’autres technologies plus populaires.</p>
+<p>Un des arguments en faveur d'Ocsigen est l'usage <em>d'un seul langage pour tout faire</em>, en effet, qu'il s'agisse de l'écriture de la couche statique (le HTML, vérifiant la validité de ce dernier), du Javascript ou du SQL (vérifiant la bonne formation d'une requête), Ocsigen est dôté d'outils et d'extensions de syntaxes pour ne demander au programmeur, qu'une connaissance de Ocaml.</p>
+<blockquote>
+<p>Bien qu'en règle général, j'aime ne pas m'enfermer dans une forte dépendance à un outil, je dois avouer que l'excès de flexibilité de Javascript m'a quelque fois écoeuré. En écrivant du Javascript avec OCaml, on préserve un des intérêts majeur du langage (de mon point de vue), son typage fort. Le déboguage d'applications usant massivement de Javascript n'est plus un problème.</p>
+</blockquote>
+<p>N'utilisant qu'un seul langage, Ocsigen permet de manipuler les couches <em>client-serveur</em> de manière aisée, de la même manière que <a href="https://www.meteor.com/">Meteor.js</a>. Il parait que l'on appelle ça <em>une plate-forme de développement isomorphique</em>, mais je ne suis pas convaincu de l'apellation.</p>
+<p>L'organisation des fichiers et des points d'entrés d'une application réalisée avec Ocsigen est aussi très différente de ce que l'on peut habituellement voir. En effet, toute la navigation est articulée autour d'une notion de service, correspondant à une valeur OCaml à part entière et pouvant être interconnecté à d'autre services. Un service peut être caractérisé par un chemin d'accès, et des paramètres <strong>GET</strong> et <strong>POST</strong> statiquement typés. (De même qu'un service ne peut être qu'une action atomique, sans chemin particulier, nous parlerons dans ce cas de coservice). Les applications Ocsigen étant compilées, un lien ne peut pointer vers un service inexistant, une vérification complémentaire des liens cassés est donc effectué à la compilation.</p>
+<p>A ça s'ajoute <em>Lwt</em>, une bibliothèque pour effectuer des traitements concurrent, soit une fragmentation de tâches en sous-programmes s'exécutant simultanéments (où chaque processus décide lui même de céder la main à son successeur). Cette bibliothèque apporte un confort indéniable dans la construction de tâches asyncrones et son portage pour <strong>Js_of_OCaml</strong> (le Javascript statiquement typé de Ocsigen) est admirablement pertinent dans le cadre d'exécution de Javascript.</p>
+<p>A ces axes brievement présenté s'ajoute une collection d'outil pour résoudre des problèmatiques classiques du développement web, que nous tâcherons de survoler dans la partie pratique de cet article.</p>
+<h3 id="pourquoi-utiliser-ocsigen">Pourquoi utiliser Ocsigen</h3>
+<p>Si j'ai décidé de m'intéresser à Ocsigen, c'est avant tout par intérêt pour le langage OCaml. Cependant, après usage, il est évident que, comme pour le développement d'application classique, le typage statique est véritablement un atout indéniable. On évite une quantité de tests chronophage, et beaucoup de vérifications &quot;plus bas niveau&quot; sont effectuées par Ocsigen. Le développeur n'a donc plus à s'en soucier. De plus, le fait, par exemple, que le compilateur vérifie la bonne sémantique du HTML accélère le flot de travail (n'obligeant plus à vérifier chaque fois la validité de son code HTML).</p>
+<p>De mon point de vue, Ocsigen se pose de bonnes questions face à des problèmatiques récurrente. Et même si je ne pense pas qu'il devienne (même si je l'aimerais) un incontournable absolu, au même titre que PHP ou Ruby On Rails, je pense qu'il met en lumière certaines bonnes pratiques, qui seront sûrement adoptées par d'autres outils, potentiellement plus démocratiques. (On peut noter une certaines similitude avec le projet <a href="http://opalang.org/">OPA</a>, par exemple).</p>
+<h3 id="des-utilisateurs-docsigen">Des utilisateurs d'Ocsigen</h3>
+<p>Ocsigen n'est actuellement pas un des mastodonte de la programmation web, cependant, il possède tout de même une liste d'utilisateurs. En voici quelques'uns choisis à la volée :</p>
+<ul>
+<li><a href="https://code.facebook.com/posts/264544830379293/hack-a-new-programming-language-for-hhvm/">Facebook</a> : Utilisation de Js_of_OCaml (pour leur développement interne).</li>
+<li><a href="http://cumulus.mirai.fr">Cumulus</a> : Un petit outil de partage de liens (dont le code source m'aura été très utile pour mon apprentissage).</li>
+<li><a href="http://www.besport.com/">BeSport</a> : Ils viendraient de recruter Vincent Balat, le chef du projet Ocsigen.</li>
+<li><a href="http://pumgrana.com/">Prumgrana</a> : Un projet qui semble gagner tous les concours où il s'inscrit.</li>
+</ul>
+<p>Quoi qu'il en soit, je n'ai pas eu l'occasion de lire de témoignage désaprobateur sur Ocsigen, sauf peut être ... le mien, après avoir tenté un Hackathon sans une préparation suffisante... mais sachez que j'ai revu mon opinion sur le projet après avoir pris le temps de me plonger dedans.</p>
+<h2 id="implémentation-dune-plateforme-de-micro-blogging">Implémentation d'une plateforme de micro-blogging</h2>
+<p>Pour présenter l'implémentation concrète d'une application avec Ocsigen, j'ai choisi un exemple bien peu original. Cependant, je pense qu'il est intéressant car il permet de présenter plusieurs aspects du framework (création d'un <strong>CRUD</strong>, donc usage d'une base de données et de Macaque, utilisation de <strong>ocaml-safepass</strong> pour crypter les mots de passes et éventuellement l'exposition et l'usage de <strong>webservices</strong>).</p>
+<blockquote>
+<p>Avant de me lancer dans l'explication détaillée, je tiens à préciser que cet article est aussi une manière d'éprouver Ocsigen, pour moi, dans un contexte très pratique. Je ne suis pas du tout un expert et il est possible que certains choix structurels soient discutables. Si vous avez des choses à redire n'hésitez pas à vous servir des commentaires, je suis ouvert à toute critique !</p>
+</blockquote>
+<p>Par soucis de lisibilité (et car ça ne présente pas beaucoup d'intérêt), le CSS sera mis de côté. On évoquera comment utiliser sa propre feuille de style, mais je ne parlerai pas du code CSS quand il n'aura pas de rapport direct avec l'implémentation de l'application.</p>
+<h3 id="installation">Installation</h3>
+<p>L'installation d'Ocsigen est véritablement simple depuis la mise en place de <a href="http://opam.ocamlpro.com/">OPAM</a>. Après l'avoir installé (et initialisé), l'installation de Ocsigen peut se limiter à :</p>
+<p><code>opam install eliom</code></p>
+<p>Pour ma part, j'utilise la version <code>4.01.0</code> de OCaml et l'installation (un peu longue) s'est déroulée sans soucis. L'usage d'OPAM est un véritable plus car c'est lui qui nous permettra d'installer les paquets additionnels nécéssaire à notre application. (On pourrait faire une analogie avec les <em>gems</em> de Ruby par exemple).<br />Sans rentrer dans les détails de l'anatomie du paquet, voici quelques petits compléments explicatifs sur la constitution du paquet <code>eliom</code> :</p>
+<ul>
+<li><code>Js_of_ocaml</code> : Pour produire du Javascript bien typé (et en ocaml)</li>
+<li><code>Macaque</code> et <code>PgOcaml</code> : Pour la construction de requêtes en OCaml</li>
+<li><code>Deriving</code> : Permet de dériver un type dans une représentation (en JSon par exemple)</li>
+<li><code>Lwt</code> : Bibliothèque pour les traitements concurrents</li>
+<li><code>̀Camlp4</code> : Ocsigen offre une collection d'extension de syntaxes</li>
+<li><code>̀TyXML</code> : Une bibliothèque de génération de XML statiquement typé</li>
+</ul>
+<p>Le paquet est aussi évidemment composé d'un serveur web, d'outils pour la gestion des calendriers/dates et de beaucoup d'autres outils. Comme vous pouvez le voir, Ocsigen est riche en composants.</p>
+<h3 id="raisonnement-général-de-lapplication">Raisonnement général de l'application</h3>
+<p>Avant de se lancer dans l'écriture de code OCaml, nous allons penser conceptuellement notre application, proposant des diagrammes minimaliste (et la structure de la base de données).</p>
+<p>Un utilisateur non connecté peut :</p>
+<ul>
+<li>Lire les messages publiés par les titulaires d'un compte</li>
+<li>Se connecter</li>
+<li>S'enregistrer</li>
+</ul>
+<p>Un utilisateur connecté peut :</p>
+<ul>
+<li>Lire les messages publiés par les titulaires d'un compte</li>
+<li>Se déconnecter</li>
+<li>Créer un message</li>
+<li>Afficher ses messages</li>
+<li>Modifier ses messages</li>
+<li>Modifier les paramètres de son compte</li>
+</ul>
+<p>Les constituants de cette application sont donc les <strong>messages</strong> et les <strong>utilisateurs</strong>. Un message sera caractérisé par un <strong>identifiant unique</strong>, une <strong>date de publication</strong>, un <strong>utilisateur posteur</strong> et un <strong>contenu</strong>. Alors qu'un utilisateur sera lui caractérisé par un <strong>identifiant unique</strong>, un <strong>pseudonyme</strong>, une <strong>adresse courriel</strong> et un <strong>mot de passe</strong>.</p>
+<p>Voici un diagramme réellement minimaliste de notre base de de données. Comme il l'indique, la relation est effectuée au niveau de l'utilisateur, qui permet de relier les messages publiés par un utlisateur. (Rien de bien compliqué).</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">users</th>
+<th align="left"><img style="vertical-align:middle" src="http://chart.apis.google.com/chart?cht=tx&amp;chl=%5Cleftarrow" alt="\leftarrow" title="\leftarrow" /> messages</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>user_id</code> <strong>PK</strong></td>
+<td align="left"><code>message_id</code> <strong>PK</strong></td>
+</tr>
+<tr class="even">
+<td align="left"><code>nickname</code></td>
+<td align="left"><code>publication_date</code></td>
+</tr>
+<tr class="odd">
+<td align="left"><code>email</code></td>
+<td align="left"><code>user_id</code> <strong>FK</strong></td>
+</tr>
+<tr class="even">
+<td align="left"><code>password</code></td>
+<td align="left"><code>content</code></td>
+</tr>
+</tbody>
+</table>
+<p>Et le code SQL (j'utilise <strong>Postgres</strong>) pour générer la base de données est ici, il n'est pas expliqué de manière méticuleuse car je suppose qu'il ne présente absolument rien de nouveau. Cependant, comme pour la structure choisie pour ce tutoriel, je suis ouvert à toute critique dans les commentaires !</p>
+<pre class="sourceCode sql"><code class="sourceCode sql"><span class="co">-- Création des séquences pour l&#39;auto increment</span>
+<span class="kw">CREATE</span> <span class="kw">SEQUENCE</span> users_id_seq; 
+<span class="kw">CREATE</span> <span class="kw">SEQUENCE</span> messages_id_seq;
+ 
+<span class="co">-- Création de la table d&#39;utilisateurs</span>
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> users (
+  user_id <span class="dt">integer</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>, 
+  nickname text <span class="kw">NOT</span> <span class="kw">NULL</span>, 
+  email text <span class="kw">NOT</span> <span class="kw">NULL</span>, 
+  <span class="kw">password</span> text <span class="kw">NOT</span> <span class="kw">NULL</span> 
+); 
+
+<span class="co">-- Création de la table de messages </span>
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> messages (
+  message_id <span class="dt">integer</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>, 
+  publication_date <span class="dt">timestamp</span> <span class="kw">NOT</span> <span class="kw">NULL</span>, 
+  user_id <span class="dt">integer</span> <span class="kw">REFERENCES</span> users (user_id) 
+      <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,
+  content text <span class="kw">NOT</span> <span class="kw">NULL</span> 
+); </code></pre>
+<p>Rien de bien compliqué, mais c'est amplement suffisant pour notre exemple. Comme on peut le voir, la table message est reliée par le champs <code>user_id</code> et la suppression d'un utilisateur supprimera tous ses messages.</p>
+</div>
+<hr />
+<a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
+<hr />
+<h2>Commentaires</h2>
+<div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'nukifw'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+    </body>
+</html>

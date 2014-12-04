@@ -17,7 +17,8 @@ post: $(RAWS)
 pdf: $(PDFS)
 
 %.pdf: $(RAW)/%.md
-	@pandoc -s --webtex $< -o $(PDF)/$@
+	@pandoc -s --latex-engine=xelatex $< -o $(PDF)/$@
+	@echo $(PDF)/$@ created
 
 %.html: $(RAW)/%.md
 	@$(eval TITLE :=  $(shell sed -n '0,/^\%/p' $< | sed -re 's/^\% *//'))

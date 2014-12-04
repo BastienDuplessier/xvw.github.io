@@ -15,3 +15,12 @@ p {
 #listarticle li{
     padding-bottom: 12px;
 }
+
+table{
+    margin: auto;
+}
+
+td{
+    padding: 4px; 
+    border: 1px solid silver;
+}
