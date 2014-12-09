@@ -15,7 +15,7 @@
       <div id="innercontent">
 <h1>Développement d'applications web avec Ocsigen</h1>
 <blockquote>
-<p>Pendant très longtemps, j'ai été amené à concevoir des applications web. J'ai eu l'occasion d'expérimenter plusieurs technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et Yaws + Erlang). Je dois avouer n'avoir été que trop rarement satisfait par ces outils, principalement car depuis ma découverte avec les langages fonctionnels statiquement typés, j'ai réellement du mal à m'en passer. C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été véritablement emballé. Cependant, Ocsigen est, actuellement, pauvre en ressource et assez dépaysant (cette opinion n'est absolument pas à prendre comme un reproche mais plus comme une constatation et s'explique par l'innovation démontrée dans Ocsigen et sa jeunesse)), j'ai donc décidé de lui accorder un petit article proposant à sa fin, une implémentation pratique où chaque étape sera décrite !</p>
+<p>Pendant très longtemps, j'ai été amené à concevoir des applications web. J'ai eu l'occasion d'expérimenter plusieurs technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et Yaws + Erlang). Je dois avouer n'avoir été que trop rarement satisfait par ces outils, principalement car depuis ma découverte des langages fonctionnels statiquement typés, j'ai réellement du mal à m'en passer. C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été véritablement emballé. Cependant, Ocsigen est, actuellement, pauvre en ressource et assez dépaysant (cette opinion n'est absolument pas à prendre comme un reproche mais plus comme une constatation et s'explique par l'innovation démontrée dans Ocsigen et sa jeunesse)), j'ai donc décidé de lui accorder un petit article proposant à sa fin, une implémentation pratique où chaque étape sera décrite !</p>
 </blockquote>
 <h2 id="présentation-sommaire-de-ocsigen">Présentation sommaire de Ocsigen</h2>
 <p><a href="http://www.ocsigen.org">Ocsigen</a> est une suite de logiciels libres écrite en OCaml, développée par le laboratoire français <a href="http://www.pps.univ-paris-diderot.fr/">PPS</a>. Son objectif principal réside dans la conception d’applications web fiables au moyen du langage de programmation <a href="http://www.ocaml.org">OCaml</a> qui est, en plus d’être extrêmement fiable, très expressif.<br />Ocsigen propose des réponses à des problèmatiques récurrentes du développement web, dans certains cas assez différentes des solutions proposées par d’autres technologies plus populaires.</p>
@@ -216,6 +216,16 @@
 <p>Maintenant que nous avons étudié la structure d'une page <code>.eliom</code> générée par <code>eliom-distillery</code>. Nous allons nous familiariser avec les pages et les services au moyen de petits exercices pratiques.</p>
 <h3 id="le-hello-world">Le Hello World</h3>
 <p>Dans cette partie, nous allons tâcher de faire l'habituel <strong>Hello World</strong>, mais avec quelques variantes. En trichant, il serait très facile de ne faire que remplacer <code>h2 [pcdata &quot;Welcome from Eliom's distillery!&quot;];</code> par <code>h2 [pcdata &quot;Hello World&quot;];</code>, mais ce serait, non seulement tricher, et totalement inutile. Cette fois nous allons directement proposer une structure de fichiers et réaliser notre Hello World sur plusieurs modules. Je vous invite à construire, via <code>eliom-distillery</code> un nouveau projet baptisé <code>hello</code>.</p>
+<h4 id="proposition-dorganisation">Proposition d'organisation</h4>
+<p>Comme je l'ai évoqué dans l'introduction, cette structure est issue de mon propre raisonnement (mais tout de même *fortemment inspirée$ de ce que j'ai pu observer sur Github, pour les quelques projets, principalement <a href="http://cumulus.mirai.fr">Cumulus</a>, que j'ai trouvé). Donc si jamais des gurus de Ocsigen ont des commentaires à faire, qu'ils n'hésitent surtout pas ! Cet article est aussi un prétexte à ma progression !</p>
+<p>Donc pour éviter d'avoir des fichiers trop longs, dans le contexte de cette application Hello World, je propose d'organiser le tout de cette manière :</p>
+<ul>
+<li><code>services.eliom</code> : Le module où nous définirons tous nos services.</li>
+<li><code>gui.eliom</code> : (Je ne suis pas convaincu par son nom) Le module qui offrira les fonctions pour la génération de page, pour éviter de répéter le code de structure d'une page.</li>
+<li><code>pages.eliom</code> : Le module qui décrira formellement chaques pages de l'application.</li>
+<li><code>hello.eliom</code> : Le point d'entrée de l'application, soit le fichier qui enregistrera les services, et qui générera le foncteur de l'application.</li>
+</ul>
+<h4 id="elaguons-linutile">Elaguons l'inutile</h4>
 </div>
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>

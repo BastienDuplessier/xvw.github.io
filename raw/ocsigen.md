@@ -8,7 +8,7 @@
 > technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et
 > Yaws + Erlang).
 > Je dois avouer n'avoir été que trop rarement satisfait par
-> ces outils, principalement car depuis ma découverte avec les
+> ces outils, principalement car depuis ma découverte des
 > langages fonctionnels statiquement typés, j'ai réellement du
 > mal à m'en passer.
 > C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été
@@ -400,3 +400,17 @@ Maintenant que nous avons étudié la structure d'une page `.eliom` générée p
 
 ### Le Hello World
 Dans cette partie, nous allons tâcher de faire l'habituel **Hello World**, mais avec quelques variantes. En trichant, il serait très facile de ne faire que remplacer `h2 [pcdata "Welcome from Eliom's distillery!"];` par `h2 [pcdata "Hello World"];`, mais ce serait, non seulement tricher, et totalement inutile. Cette fois nous allons directement proposer une structure de fichiers et réaliser notre Hello World sur plusieurs modules. Je vous invite à construire, via `eliom-distillery` un nouveau projet baptisé `hello`.
+
+
+#### Proposition d'organisation
+Comme je l'ai évoqué dans l'introduction, cette structure est issue de mon propre raisonnement (mais tout de même *fortemment inspirée$ de ce que j'ai pu observer sur Github, pour les quelques projets, principalement [Cumulus](http://cumulus.mirai.fr), que j'ai trouvé). Donc si jamais des gurus de Ocsigen ont des commentaires à faire, qu'ils n'hésitent surtout pas ! Cet article est aussi un prétexte à ma progression !
+
+Donc pour éviter d'avoir des fichiers trop longs, dans le contexte de cette application Hello World, je propose d'organiser le tout de cette manière :
+
+*    `services.eliom` : Le module où nous définirons tous nos services.
+*    `gui.eliom` : (Je ne suis pas convaincu par son nom) Le module qui offrira les fonctions pour la génération de page, pour éviter de répéter le code de structure d'une page.
+*    `pages.eliom` : Le module qui décrira formellement chaques pages de l'application.
+*    `hello.eliom` : Le point d'entrée de l'application, soit le fichier qui enregistrera les services, et qui générera le foncteur de l'application.
+
+#### Elaguons l'inutile
+

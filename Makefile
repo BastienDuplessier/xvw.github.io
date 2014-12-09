@@ -7,11 +7,13 @@ PDFS = $(patsubst $(RAW)/%.md,%.pdf,$(wildcard $(RAW)/*.md))
 
 .PHONY: clean
 
-all: post pdf
+all: content
 	@git add *
 	@git commit -m "Update pages"
 	@echo "Modifications commited"
 	@git push origin master
+
+content : post pdf
 
 post: $(RAWS)
 pdf: $(PDFS)
