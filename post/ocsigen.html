@@ -212,6 +212,10 @@
              h2 [pcdata <span class="st">&quot;Welcome from Eliom&#39;s distillery!&quot;</span>];
            ])))</code></pre>
 <p>Une fois créé, c'est au lancement de l'application que nous enregistrerons notre service et que nous définirons la page que dois renvoyer le service. Le code ci-dessus exprime que l'on enregistre le service <code>main_service</code>. Et que l'on spécifie que ce service, qui ne reçoit aucun argument GET et POST (les deux units de la fonction anonyme donnée en argument) renverra une page HTML ne contenant, en plus des constituants classique d'une page, un message en <code>&lt;h2&gt;</code> : <code>&quot;Welcome from Eliom's distillery!&quot;</code>.</p>
+<p>Concrètement, un service est un élément (réutilisable) créé et caractérisé par un chemin d'accès et des paramètres. Une fois qu'il est défini, il est enregistré et correspond à un point d'entrée de l'application. Renvoyant, dans beaucoup de cas, une page HTML (conçue, ici, via TyXML, mais il existe d'autres manières).</p>
+<p>Maintenant que nous avons étudié la structure d'une page <code>.eliom</code> générée par <code>eliom-distillery</code>. Nous allons nous familiariser avec les pages et les services au moyen de petits exercices pratiques.</p>
+<h3 id="le-hello-world">Le Hello World</h3>
+<p>Dans cette partie, nous allons tâcher de faire l'habituel <strong>Hello World</strong>, mais avec quelques variantes. En trichant, il serait très facile de ne faire que remplacer <code>h2 [pcdata &quot;Welcome from Eliom's distillery!&quot;];</code> par <code>h2 [pcdata &quot;Hello World&quot;];</code>, mais ce serait, non seulement tricher, et totalement inutile. Cette fois nous allons directement proposer une structure de fichiers et réaliser notre Hello World sur plusieurs modules. Je vous invite à construire, via <code>eliom-distillery</code> un nouveau projet baptisé <code>hello</code>.</p>
 </div>
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>

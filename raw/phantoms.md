@@ -352,7 +352,7 @@ Un exemple classique, une balise `span` ne peut pas contenir de balise
 ### sous-typage, covariance et contravariance
 Les variants polymorphes introduisent une notion de sous-typage dans le
 langage OCaml. Concrètement, un premier type (défini par des constructeurs
-polymrophes) fermé est un sous-type d'un autre type (défini lui aussi par des
+polymorphes) fermé est un sous-type d'un autre type (défini lui aussi par des
 constructeurs polymorphes) fermé, si tous les constructeurs du premier
 sont inclus dans les constructeurs du second.
 

@@ -393,3 +393,10 @@ let () =
 ```
 
 Une fois créé, c'est au lancement de l'application que nous enregistrerons notre service et que nous définirons la page que dois renvoyer le service. Le code ci-dessus exprime que l'on enregistre le service `main_service`. Et que l'on spécifie que ce service, qui ne reçoit aucun argument GET et POST (les deux units de la fonction anonyme donnée en argument) renverra une page HTML ne contenant, en plus des constituants classique d'une page, un message en `<h2>` : `"Welcome from Eliom's distillery!"`.
+
+Concrètement, un service est un élément (réutilisable) créé et caractérisé par un chemin d'accès et des paramètres. Une fois qu'il est défini, il est enregistré et correspond à un point d'entrée de l'application. Renvoyant, dans beaucoup de cas, une page HTML (conçue, ici, via TyXML, mais il existe d'autres manières).
+
+Maintenant que nous avons étudié la structure d'une page `.eliom` générée par `eliom-distillery`. Nous allons nous familiariser avec les pages et les services au moyen de petits exercices pratiques.
+
+### Le Hello World
+Dans cette partie, nous allons tâcher de faire l'habituel **Hello World**, mais avec quelques variantes. En trichant, il serait très facile de ne faire que remplacer `h2 [pcdata "Welcome from Eliom's distillery!"];` par `h2 [pcdata "Hello World"];`, mais ce serait, non seulement tricher, et totalement inutile. Cette fois nous allons directement proposer une structure de fichiers et réaliser notre Hello World sur plusieurs modules. Je vous invite à construire, via `eliom-distillery` un nouveau projet baptisé `hello`.
