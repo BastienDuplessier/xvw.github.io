@@ -27,7 +27,7 @@ automatisée. Durant cette démarche, la radio devait impérativement
 être coupée durant le temps où la sonde se trouverait derrière Mars.
 Le lendemain, la sonde n'avait toujours pas émis de signaux radio. Elle
 est considérée comme perdue.
-oLa sonde avait suivi une trajectoire beaucoup trop basse (près de 140 km
+La sonde avait suivi une trajectoire beaucoup trop basse (près de 140 km
 de dessous de ce qui était prévu) par rapport à sa vitesse et s'est donc
 probablement transformée en boule de feu.
 Une commission d'enquête révelera vite la raison de cette erreur de
@@ -54,7 +54,7 @@ Limitons notre problème à la distinction des **centimètres** et des
 *    `km_to_cm`
 
 Naïvement, lorsque j'ai été amené à lire le problème de typage soulevé
-par la sonde *Mars Climate Orbiter*, oet de manière plus générale à la
+par la sonde *Mars Climate Orbiter*, et de manière plus générale à la
 représentation d'unités de mesure, j'ai pensé à la définition d'une
 disjonction séparant les kilomètres des centimètres. Avec, par exemple,
 ceci comme implémentation :

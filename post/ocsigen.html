@@ -124,7 +124,94 @@
       <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,
   content text <span class="kw">NOT</span> <span class="kw">NULL</span> 
 ); </code></pre>
-<p>Rien de bien compliqué, mais c'est amplement suffisant pour notre exemple. Comme on peut le voir, la table message est reliée par le champs <code>user_id</code> et la suppression d'un utilisateur supprimera tous ses messages.</p>
+<p>Rien de bien compliqué, mais c'est amplement suffisant pour notre exemple. Comme on peut le voir, la table message est reliée par le champs <code>user_id</code> et la suppression d'un utilisateur supprimera tous ses messages. A partir de ce stade de l'article, j'estimerai que la base de données à été initialisée et comprend ces deux tables.</p>
+<h3 id="structure-et-construction-dun-premier-projet">Structure et construction d'un premier projet</h3>
+<p>Une manière commune d'initialiser un projet Ocsigen (une fois ce dernier installé) est d'utiliser l'outil <code>eliom-distillery</code> qui crée un projet vierge et les éléments nécéssaire au déploiement d'une application.</p>
+<blockquote>
+<p>L'outil <code>eliom-distillery</code> est très utile pour la construction d'application web. Cependant, certains lui reprocheront l'impossibilité de construire des bibliothèques. Pour ça, je vous conseillerai <code>OASIS</code>. Cependant ce n'est pas la thématique de cet article.</p>
+</blockquote>
+<p>L'usage de <code>eliom-distillery</code> est généralement :</p>
+<pre><code>eliom-distillery -name nom_du_projet</code></pre>
+<p>Qui vous proposera la création d'un répertoire du nom du projet choisi. Ce répertoire contient les fichiers minimums nécéssaires au lancement d'une application minimaliste Ocsigen.<br />Observons maintenant le contenu de ce répertoire:</p>
+<ul>
+<li><code>votre_projet.eliom</code> : premier fichier de votre application</li>
+<li><code>votre_projet.conf.in</code> : le fichier template de configuration. Vous n'avez à priori jamais à y toucher</li>
+<li><code>Makefile</code> : le Makefile de lancement/déploiement de l'application. Vous n'avez à priori jamais à le modifier non plus</li>
+<li><code>Makefile.options</code> : c'est le fichier utilisé pour générer le <code>Makefile</code> et la configuration du serveur. Lui peut être modifié, notamment pour ajouter des extensions externes, ou encore modifier le port du serveur de test (ou d'exécution). Il n'est au final qu'une simple liste de variables à modifier ou enrichir</li>
+<li><code>static/</code> : le répertoire contenant les <em>assets</em> du projets (CSS, images, Javascript normal)</li>
+<li><code>README</code> : ce fichier donne plus ou moins les explications que je donne dans cette rubrique (mais en Anglais!).</li>
+</ul>
+<p>Le fichier <code>.eliom</code> est le premier fichier de sources. Et chaques fichiers <code>.eliom</code> (ou <code>.eliomi</code> pour les interfaces) est considéré automatiquement comme constituant de l'application. (Il est possible d'étendre ce statut aux fichiers <code>.ml</code> et <code>.mli</code> en enrichissant les variables <code>SERVER_FILES</code> et <code>CLIENT_FILES</code>).<br />Voyons le code de ce fichier généré avec la commande <code>eliom-distillery -name microblog</code> :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">{shared{
+  <span class="ot">open</span> Eliom_lib
+  <span class="ot">open</span> Eliom_content
+  <span class="ot">open</span> Html5<span class="kw">.</span>D
+}}
+
+<span class="ot">module</span> Microblog_app =
+  Eliom_registration<span class="kw">.</span><span class="dt">App</span> (
+    <span class="kw">struct</span>
+      <span class="kw">let</span> application_name = <span class="st">&quot;microblog&quot;</span>
+    <span class="kw">end</span>)
+
+<span class="kw">let</span> main_service =
+  Eliom_service<span class="kw">.</span>App<span class="kw">.</span>service ~path:[] ~get_params:Eliom_parameter<span class="kw">.</span><span class="dt">unit</span> ()
+
+<span class="kw">let</span> () =
+  Microblog_app<span class="kw">.</span>register
+    ~service:main_service
+    (<span class="kw">fun</span> () () -&gt;
+      Lwt<span class="kw">.</span>return
+        (Eliom_tools<span class="kw">.</span>F<span class="kw">.</span>html
+           ~title:<span class="st">&quot;microblog&quot;</span>
+           ~css:[[<span class="st">&quot;css&quot;</span>;<span class="st">&quot;microblog.css&quot;</span>]]
+           Html5<span class="kw">.</span>F<span class="kw">.</span>(body [
+             h2 [pcdata <span class="st">&quot;Welcome from Eliom&#39;s distillery!&quot;</span>];
+           ])))</code></pre>
+<p>Rassurez-vous, nous étudierons son anatomie plus tard. Retenons juste que par défaut, une application générée avec <code>eliom-distillery</code> ne propose qu'un seul service sur la racine du serveur.</p>
+<h3 id="tester-son-application-fraîchement-générée">Tester son application fraîchement générée</h3>
+<p>Comme l'indique le <code>README</code> (pour ceux l'ayant lu), on peut tester localement son projet, pour cela il suffit de lancer la directive :</p>
+<pre><code>make test.byte</code></pre>
+<p>Qui compilera les fichiers relatifs à notre application et exécutera le serveur sur le port de test (défini dans <code>Makefile.options</code>). La page est donc accessible à <a href="http://localhost:8080">http://localhost:8080</a> (si vous n'avez pas modifié le port de test par défaut). Si vous n'avez pas modifié votre fichier <code>.eliom</code>, une fois le serveur de test lancé, la page devrait fièrement afficher : <em>&quot;Welcome from Eliom's distillery!&quot;</em>.</p>
+<h3 id="anatomie-du-.eliom">Anatomie du .eliom</h3>
+<p>Le fichier <code>eliom</code> généré peut être assez déroutant pour le profane, nous allons donc rapidement survoler ses constituants, non pas pour les détailler méticuleusement, mais pour proposer un survol rapide de ce qui constitue une application Ocsigen.</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">{shared{
+  <span class="ot">open</span> Eliom_lib
+  <span class="ot">open</span> Eliom_content
+  <span class="ot">open</span> Html5<span class="kw">.</span>D
+}}</code></pre>
+<p>Cette partie ne concerne que les &quot;importations&quot;. Comme vous pouvez le voir, les importations sont entourées par <code>{shared{</code> et <code>}}</code>. Cela indique que les importations sont partagées au client et au serveur.<br />Concrètement, Ocsigen propose un traitement uniforme du client et du serveur, il est donc possible de ne contrôler que du code client ou que du code serveur, ou les deux.</p>
+<ul>
+<li><code>{client{du_code}}</code> : exécuter <code>du_code</code> uniquement côté client</li>
+<li><code>{server{du_code}}</code> : exécuter <code>du_code</code> uniquement côté serveur</li>
+<li><code>{shared{du_code}}</code> : exécutera <code>du_code</code> des deux côtés.</li>
+</ul>
+<p>Sans mise en contexte, le code est toujours exécuté serveur, c'est pour cette raison que l'on verra rarement de code entre <code>{server{ ... }}</code>.</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">module</span> Microblog_app =
+  Eliom_registration<span class="kw">.</span><span class="dt">App</span> (
+    <span class="kw">struct</span>
+      <span class="kw">let</span> application_name = <span class="st">&quot;microblog&quot;</span>
+    <span class="kw">end</span>)</code></pre>
+<p>Cette partie génère un module (<code>NomApplication_app</code>) lui conférant (c'est un module généré par un autre, <code>Eliom_registration.App</code> est un foncteur ne requierant qu'une fonction <code>application_name</code>). C'est au travers de ce module que nous enregistrerons nos services. C'est un peu le point d'entrée de l'application.</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> main_service =
+  Eliom_service<span class="kw">.</span>App<span class="kw">.</span>service
+    ~path:[]
+    ~get_params:Eliom_parameter<span class="kw">.</span><span class="dt">unit</span>
+    ()</code></pre>
+<p>Cette partie consiste à définir un service, en l'occurence, le service &quot;par défaut&quot;. Ce dernier n'a pas de chemin (donc il est accessible via l'url : <code>http://monsite</code> et n'attend aucun paramètre.</p>
+<p>Nous préciserons la notion de service plus tard, cependant, c'est au travers de ce mécanisme qu'Ocsigen permet de faire abstraction des fichiers physiques accessibles par l'url, comme c'est le cas en PHP (par exemple).</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> () =
+  Microblog_app<span class="kw">.</span>register
+    ~service:main_service
+    (<span class="kw">fun</span> () () -&gt;
+      Lwt<span class="kw">.</span>return
+        (Eliom_tools<span class="kw">.</span>F<span class="kw">.</span>html
+           ~title:<span class="st">&quot;microblog&quot;</span>
+           ~css:[[<span class="st">&quot;css&quot;</span>;<span class="st">&quot;microblog.css&quot;</span>]]
+           Html5<span class="kw">.</span>F<span class="kw">.</span>(body [
+             h2 [pcdata <span class="st">&quot;Welcome from Eliom&#39;s distillery!&quot;</span>];
+           ])))</code></pre>
+<p>Une fois créé, c'est au lancement de l'application que nous enregistrerons notre service et que nous définirons la page que dois renvoyer le service. Le code ci-dessus exprime que l'on enregistre le service <code>main_service</code>. Et que l'on spécifie que ce service, qui ne reçoit aucun argument GET et POST (les deux units de la fonction anonyme donnée en argument) renverra une page HTML ne contenant, en plus des constituants classique d'une page, un message en <code>&lt;h2&gt;</code> : <code>&quot;Welcome from Eliom's distillery!&quot;</code>.</p>
 </div>
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>

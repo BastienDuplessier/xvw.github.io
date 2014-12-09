@@ -254,4 +254,142 @@ CREATE TABLE messages (
 Rien de bien compliqué, mais c'est amplement suffisant pour notre
 exemple. Comme on peut le voir, la table message est reliée par
 le champs `user_id` et la suppression d'un utilisateur supprimera
-tous ses messages.
+tous ses messages. A partir de ce stade de l'article, j'estimerai
+que la base de données à été initialisée et comprend ces deux
+tables.
+
+### Structure et construction d'un premier projet
+Une manière commune d'initialiser un projet Ocsigen (une fois ce
+dernier installé) est d'utiliser l'outil `eliom-distillery`
+qui crée un projet vierge et les éléments nécéssaire au
+déploiement d'une application.
+
+> L'outil `eliom-distillery` est très utile pour la construction
+> d'application web. Cependant, certains lui reprocheront
+> l'impossibilité de construire des bibliothèques. Pour ça,
+> je vous conseillerai `OASIS`. Cependant ce n'est pas la
+> thématique de cet article.
+
+L'usage de `eliom-distillery` est généralement :
+
+~~~
+eliom-distillery -name nom_du_projet
+~~~
+
+
+Qui vous proposera la création d'un répertoire du nom du projet choisi.
+Ce répertoire contient les fichiers minimums nécéssaires au lancement
+d'une application minimaliste Ocsigen. \
+Observons maintenant le contenu de ce répertoire: 
+
+*   `votre_projet.eliom` : premier fichier de votre application
+*   `votre_projet.conf.in` : le fichier template de configuration. Vous n'avez à priori jamais à y toucher
+*   `Makefile` : le Makefile de lancement/déploiement de l'application. Vous n'avez à priori jamais à le modifier non plus
+*   `Makefile.options` : c'est le fichier utilisé pour générer le `Makefile` et la configuration du serveur. Lui peut être modifié, notamment pour ajouter des extensions externes, ou encore modifier le port du serveur de test (ou d'exécution). Il n'est au final qu'une simple liste de variables à modifier ou enrichir
+*   `static/` : le répertoire contenant les *assets* du projets (CSS, images, Javascript normal)
+* `README` : ce fichier donne plus ou moins les explications que je donne dans cette rubrique (mais en Anglais!).
+
+Le fichier `.eliom` est le premier fichier de sources. Et chaques fichiers `.eliom` (ou `.eliomi` pour les interfaces) est considéré automatiquement comme constituant de l'application. (Il est possible d'étendre ce statut aux fichiers `.ml` et `.mli` en enrichissant les variables `SERVER_FILES` et `CLIENT_FILES`). \
+Voyons le code de ce fichier généré avec la commande `eliom-distillery -name microblog` :
+
+```ocaml
+{shared{
+  open Eliom_lib
+  open Eliom_content
+  open Html5.D
+}}
+
+module Microblog_app =
+  Eliom_registration.App (
+    struct
+      let application_name = "microblog"
+    end)
+
+let main_service =
+  Eliom_service.App.service ~path:[] ~get_params:Eliom_parameter.unit ()
+
+let () =
+  Microblog_app.register
+    ~service:main_service
+    (fun () () ->
+      Lwt.return
+        (Eliom_tools.F.html
+           ~title:"microblog"
+           ~css:[["css";"microblog.css"]]
+           Html5.F.(body [
+             h2 [pcdata "Welcome from Eliom's distillery!"];
+           ])))
+```
+
+Rassurez-vous, nous étudierons son anatomie plus tard. Retenons juste que par défaut, une application générée avec `eliom-distillery` ne propose qu'un seul service sur la racine
+du serveur.
+
+### Tester son application fraîchement générée
+Comme l'indique le `README` (pour ceux l'ayant lu), on peut tester localement son projet, pour cela il suffit de lancer la directive :
+
+~~~
+make test.byte
+~~~
+
+Qui compilera les fichiers relatifs à notre application et exécutera le serveur sur le port de test (défini dans `Makefile.options`).
+La page est donc accessible à [http://localhost:8080](http://localhost:8080) (si vous n'avez pas modifié le port de test par défaut). Si vous n'avez pas modifié votre fichier `.eliom`, une fois le serveur de test lancé, la page devrait fièrement afficher : *"Welcome from Eliom's distillery!"*.
+
+### Anatomie du .eliom
+Le fichier `eliom` généré peut être assez déroutant pour le profane, nous allons donc rapidement survoler ses constituants, non pas pour les détailler méticuleusement, mais pour proposer un survol rapide de ce qui constitue une application Ocsigen.
+
+```ocaml
+{shared{
+  open Eliom_lib
+  open Eliom_content
+  open Html5.D
+}}
+```
+
+Cette partie ne concerne que les "importations". Comme vous pouvez le voir, les importations sont entourées par `{shared{` et `}}`. Cela indique que les importations sont partagées au client et au serveur. \
+Concrètement, Ocsigen propose un traitement uniforme du client et du serveur, il est donc possible de ne contrôler que du code client ou que du code serveur, ou les deux.
+
+*  `{client{du_code}}` : exécuter `du_code` uniquement côté client
+*  `{server{du_code}}` : exécuter `du_code` uniquement côté serveur
+*  `{shared{du_code}}` : exécutera `du_code` des deux côtés.
+
+Sans mise en contexte, le code est toujours exécuté serveur, c'est pour cette raison que l'on verra rarement de code entre `{server{ ... }}`.
+
+
+```ocaml
+module Microblog_app =
+  Eliom_registration.App (
+    struct
+      let application_name = "microblog"
+    end)
+
+```
+
+Cette partie génère un module (`NomApplication_app`) lui conférant (c'est un module généré par un autre, `Eliom_registration.App` est un foncteur ne requierant qu'une fonction `application_name`). C'est au travers de ce module que nous enregistrerons nos services. C'est un peu le point d'entrée de l'application.
+
+```ocaml
+let main_service =
+  Eliom_service.App.service
+    ~path:[]
+	~get_params:Eliom_parameter.unit
+	()
+```
+
+Cette partie consiste à définir un service, en l'occurence, le service "par défaut". Ce dernier n'a pas de chemin (donc il est accessible via l'url : `http://monsite` et n'attend aucun paramètre.
+
+Nous préciserons la notion de service plus tard, cependant, c'est au travers de ce mécanisme qu'Ocsigen permet de faire abstraction des fichiers physiques accessibles par l'url, comme c'est le cas en PHP (par exemple).
+
+```ocaml
+let () =
+  Microblog_app.register
+    ~service:main_service
+    (fun () () ->
+      Lwt.return
+        (Eliom_tools.F.html
+           ~title:"microblog"
+           ~css:[["css";"microblog.css"]]
+           Html5.F.(body [
+             h2 [pcdata "Welcome from Eliom's distillery!"];
+           ])))
+```
+
+Une fois créé, c'est au lancement de l'application que nous enregistrerons notre service et que nous définirons la page que dois renvoyer le service. Le code ci-dessus exprime que l'on enregistre le service `main_service`. Et que l'on spécifie que ce service, qui ne reçoit aucun argument GET et POST (les deux units de la fonction anonyme donnée en argument) renverra une page HTML ne contenant, en plus des constituants classique d'une page, un message en `<h2>` : `"Welcome from Eliom's distillery!"`.
