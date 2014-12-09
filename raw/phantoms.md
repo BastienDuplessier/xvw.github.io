@@ -447,7 +447,7 @@ Les `<span>` sont un peu différent car ces derniers ne peuvent contenir **que**
 `<span>` ou des `Pcdata`. Il faut donc restreindre son dommaine d'entrée :
 
 ```ocaml
-val span : [< `Span | `Pcdata ] tag list -> [> `Span] tag
+val span : [< `Span | `Pcdata ] tag list -> [`Span] tag
 let span childs = Node ("span", childs)
 ```
 
@@ -478,7 +478,7 @@ end = struct
 end
 ```
 
-Je vous inviter maintenant à saisir quelques expressions pour tester notre code,
+Je vous invites maintenant à saisir quelques expressions pour tester notre code,
 par exemple : `HTML.(span [br])` qui devrait échouer, ou encore `HTML.(span [pcdata "hello"])`,
 qui lui devrait réussir. Un autre exemple un peu plus long :
 

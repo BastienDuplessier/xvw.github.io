@@ -21,6 +21,9 @@
 > implémentation pratique où chaque étape sera décrite !
 
 
+> Un des prérequis de ce cours est une connaissance du langage
+> OCaml (version 4.01.x)
+
 ## Présentation sommaire de Ocsigen
 [Ocsigen](http://www.ocsigen.org) est une suite de logiciels
 libres écrite en OCaml, développée par le laboratoire français
@@ -414,3 +417,208 @@ Donc pour éviter d'avoir des fichiers trop longs, dans le contexte de cette app
 
 #### Elaguons l'inutile
 
+Comme nous allons reprendre notre application depuis le début, je propose de supprimer le superflu (que nous réécrirons dans les bons fichiers). Notre `hello.eliom` pourra se limiter à :
+
+```ocaml
+(* Directives d'importation *)
+{shared{
+  open Eliom_lib
+  open Eliom_content
+  open Html5.D
+}}
+
+
+(* Création du module principal pour  *)
+(* enregistrer les services, notamment *)
+module Hello_app =
+  Eliom_registration.App (
+    struct
+      let application_name = "hello"
+    end)
+
+```
+En compilant via `make test.byte`, tout marchera sauf qu'en se rendant à l'adresse du serveur ([ici](http://localhost:8000), j'ai modifié, dans le `Makefile.options` le port de test car `8080` est déjà utilisé par `Yaws`, un serveur Erlang) on arrive sur une erreur 404. Ce qui est logique car aucun service n'a été défini.
+
+#### Une page type
+Avant de concevoir les services, et s'intéresser aux paramètres, nous allons généraliser le comportement d'une page type. Pour cela rendons nous dans le fichier `gui.eliom`.
+
+Ce que je propose, c'est d'importer les modules dont nous aurons besoin pour construire le squelette d'une page, ensuite de réaliser trois quatre fonctions.
+
+*   Une fonction pour créer une page vide
+*   Une fonction pour le header
+*   Une fonction pour le footer
+*   Une fonction pour créer une page avec le header et le footer.
+
+Ce qui nous permettra de créer rapidement une page via une simple fonction, ne prenant en argument que la liste de balises nécéssaire à la création du contenu que nous désirons pour une page:
+
+```ocaml
+(* Les importations ne doivent être, cette fois  *)
+(* effectives uniquement côté serveur, donc pas la peine  *)
+(* d'utiliser {{shared{{}} *)
+
+(* contient les modules de création de contenu (Html5)*)
+open Eliom_content
+(* Contient le HTML avec la sémantique du DOM, pour les 
+   application hybrides
+ *)
+open Html5.D
+
+
+(* Squelette d'une page *)
+let skeleton title body_content = 
+  Eliom_tools.F.html
+    ~title:title
+    ~css:[["css"; "hello.css"]]
+    (Html5.F.body body_content)
+
+(* Header et footer *)
+let header = 
+  [div 
+     [
+       h1 [pcdata "Application Hello !"]; 
+       hr (); 
+     ]
+  ]
+let footer = 
+  [div
+    [
+      hr (); 
+      span [pcdata "Fin de l'application"]
+    ]
+  ]
+
+(* Page type *)
+let std_page body_content =  
+  skeleton 
+    "Hello World application"
+    (header @ body_content @ footer)
+
+```
+
+Concrètement, on reproduit, mais de manière plus fragmentée le code fournit par `eliom-distillery`. La nuance entre `Html5.F` et `Html5.D` est assez sensible mais concrètement, retenons juste que les éléments construits par `D` permettent d'être *client-server* et manipulé dans les deux côtés. A priori, la structure de notre page (`<html><head>...</head><body>`) ne devra jamais être manipulée par du Javascript, on peut la créer via le module `F`. Le contenu de la page pouvant être potentiellement manipulé, on utilisera `D`. \
+Le manuel de `Eliom` conseille, pour les débutants de n'utiliser que `D`. Cependant, je me base sur le code fourni par `eliom-distillery` pour le squelette de ma page, donc j'utilise `F`.
+
+#### Construction de HTML
+Dans la création du module `gui.eliom`, nous avons créé du Html via `TyXML`. Voyons en détail comment cela fonctionne.
+Typiquement les balises sont des fonctions ayant le même nom que leur représentation HTML. De ce fait :
+
+```ocaml
+div [pcdata "Hello"]
+```
+
+produira le code HTML suivant:
+
+```html
+<div>Hello</div>
+```
+
+TyXML utilise des types fantômes pour représenter les balises, vous pouvez vous référer à [cet article](phantoms.html) qui évoque sommairement le concept sous-jacent. et le `pcdata` sert à définir du "texte brute". C'est typiquement le texte racine de chaque balise pouvant afficher du texte. \
+Voyons un exemple un peu plus complexe et essayons de générer ce code via TyXML :
+
+```html
+<div>
+  <h1>Bonjour !</h1>
+  <hr />
+  <div>
+    <p>Voici la liste de mes envies :</p>
+	<ul>
+	  <li>Une glace</li>
+	  <li>Le livre Real World OCaml</li>
+	  <li>Une chemise blanche</li>
+	</ul>
+  </div>
+</div>
+```
+
+Voici sa représentation TyXML :
+
+```ocaml
+div
+[
+  h1 [pcdata "Bonjour !"];
+  hr ();
+  div
+  [
+    p [pcdata "Voici la liste de mes envies :"];
+	ul
+	[
+      li [pcdata "Une glace"];
+	  li [pcdata "Le livre Real World OCaml"];
+	  li [pcdata "Une chemise blanche"];
+    ]
+  ]
+]
+```
+Les retours à la ligne ne sont absolument pas obligatoire, ce que l'on retient, c'est qu'une balise pouvant en contenir d'autres a cette sémantique : `balise [liste d'autres balises]` et qu'une balise "unique", de cette forme `<balise />` (soit `<hr />` ou `<br />` par exemple) respecte cette sémantique : `balise ()`.
+
+Un des avantage de passer par TyXML est de garantir que le HTML produit est correctement typé (selon le W3C) (essayons donc de mettre une `<div>` dans un `<span>` et le code ne compilera même pas !), mais aussi d'être généralement plus court à écrire.
+
+Il est évidemment possible d'enrichir les balises d'attributs, pour ça on utilise l'argument labelisé `~a`, qui attend une liste d'attributs. Par exemple une liste de classes, ou un identifiant. Par exemple :
+
+```ocaml
+div
+  ~a:[a_id "identifiant", a_class ["rouge; vert"]]
+  [
+     span ~a:[a_id "say_hello"] [pcdata "Hello !"]
+  ]
+```
+
+Donnera le code HTML suivant :
+
+```html
+<div id="identifiant" class="rouge vert">
+  <span id="say_hello">Hello !</span>
+</div>
+```
+
+Maintenant, la compréhension de `gui.eliom` devrait être plus évidente et nous pouvons même modifier ce dernier pour que le contenu donné à la fonction `std_page` soit placé dans une div à l'identifiant `content` et que le header et le footer soient aussi identifié !
+
+```ocaml
+(* Les importations ne doivent être, cette fois  *)
+(* effectives uniquement côté serveur, donc pas la peine  *)
+(* d'utiliser {{shared{{}} *)
+
+(* contient les modules de création de contenu (Html5)*)
+open Eliom_content
+(* Contient le HTML avec la sémantique du DOM, pour les 
+   application hybrides
+ *)
+open Html5.D
+
+
+(* Squelette d'une page *)
+let skeleton title body_content = 
+  Eliom_tools.F.html
+    ~title:title
+    ~css:[["css"; "hello.css"]]
+    (Html5.F.body body_content)
+
+(* Header et footer *)
+let header = 
+  div 
+    ~a:[a_id "header"]
+    [
+      h1 [pcdata "Application Hello !"]; 
+      hr (); 
+    ]
+
+let footer = 
+  div
+    ~a:[a_id "footer"]
+    [
+      hr (); 
+      span [pcdata "Fin de l'application"]
+    ]
+    
+(* Page type *)
+let std_page body_content =  
+  skeleton 
+    "Hello World application"
+    [
+      header; 
+      div ~a:[a_id "content"] body_content;
+      footer
+    ]
+
+```
+Notre code est plus lisible, et au moyen de CSS, on peut accéder à priori à chaque élément constituants de notre page car le header, le footer et le contenu sont identifiés !

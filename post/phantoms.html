@@ -205,7 +205,7 @@
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">val</span> div : &#39;a tag <span class="dt">list</span> -&gt; [<span class="dt">`Div</span>] tag
 <span class="kw">let</span> div childs = <span class="dt">Node</span> (<span class="st">&quot;div&quot;</span>, childs)</code></pre>
 <p>Les <code>&lt;span&gt;</code> sont un peu différent car ces derniers ne peuvent contenir <strong>que</strong> des <code>&lt;span&gt;</code> ou des <code>Pcdata</code>. Il faut donc restreindre son dommaine d'entrée :</p>
-<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">val</span> span : [&lt; <span class="dt">`Span</span> | <span class="dt">`Pcdata</span> ] tag <span class="dt">list</span> -&gt; [&gt; <span class="dt">`Span</span>] tag
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">val</span> span : [&lt; <span class="dt">`Span</span> | <span class="dt">`Pcdata</span> ] tag <span class="dt">list</span> -&gt; [<span class="dt">`Span</span>] tag
 <span class="kw">let</span> span childs = <span class="dt">Node</span> (<span class="st">&quot;span&quot;</span>, childs)</code></pre>
 <p>Cette fois, la décoration du type <code>tag</code> restreind les entrées à seulement des données <code>&lt;span&gt;</code> ou des <code>Pcdata</code>. (Oui, la borne est superieur, donc on restreind l'entrée à ces deux types). Pour rappel, le code général du module est :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">module</span> HTML : 
@@ -228,7 +228,7 @@
   <span class="kw">let</span> div childs = <span class="dt">Node</span> (<span class="st">&quot;div&quot;</span>, childs)
   <span class="kw">let</span> span childs = <span class="dt">Node</span> (<span class="st">&quot;span&quot;</span>, childs) 
 <span class="kw">end</span></code></pre>
-<p>Je vous inviter maintenant à saisir quelques expressions pour tester notre code, par exemple : <code>HTML.(span [br])</code> qui devrait échouer, ou encore <code>HTML.(span [pcdata &quot;hello&quot;])</code>, qui lui devrait réussir. Un autre exemple un peu plus long :</p>
+<p>Je vous invites maintenant à saisir quelques expressions pour tester notre code, par exemple : <code>HTML.(span [br])</code> qui devrait échouer, ou encore <code>HTML.(span [pcdata &quot;hello&quot;])</code>, qui lui devrait réussir. Un autre exemple un peu plus long :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> <span class="ot">open</span> HTML <span class="kw">in</span>
   div [
     span [pcdata <span class="st">&quot;Hello world&quot;</span>];

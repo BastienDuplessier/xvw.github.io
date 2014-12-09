@@ -17,6 +17,9 @@
 <blockquote>
 <p>Pendant très longtemps, j'ai été amené à concevoir des applications web. J'ai eu l'occasion d'expérimenter plusieurs technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et Yaws + Erlang). Je dois avouer n'avoir été que trop rarement satisfait par ces outils, principalement car depuis ma découverte des langages fonctionnels statiquement typés, j'ai réellement du mal à m'en passer. C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été véritablement emballé. Cependant, Ocsigen est, actuellement, pauvre en ressource et assez dépaysant (cette opinion n'est absolument pas à prendre comme un reproche mais plus comme une constatation et s'explique par l'innovation démontrée dans Ocsigen et sa jeunesse)), j'ai donc décidé de lui accorder un petit article proposant à sa fin, une implémentation pratique où chaque étape sera décrite !</p>
 </blockquote>
+<blockquote>
+<p>Un des prérequis de ce cours est une connaissance du langage OCaml (version 4.01.x)</p>
+</blockquote>
 <h2 id="présentation-sommaire-de-ocsigen">Présentation sommaire de Ocsigen</h2>
 <p><a href="http://www.ocsigen.org">Ocsigen</a> est une suite de logiciels libres écrite en OCaml, développée par le laboratoire français <a href="http://www.pps.univ-paris-diderot.fr/">PPS</a>. Son objectif principal réside dans la conception d’applications web fiables au moyen du langage de programmation <a href="http://www.ocaml.org">OCaml</a> qui est, en plus d’être extrêmement fiable, très expressif.<br />Ocsigen propose des réponses à des problèmatiques récurrentes du développement web, dans certains cas assez différentes des solutions proposées par d’autres technologies plus populaires.</p>
 <p>Un des arguments en faveur d'Ocsigen est l'usage <em>d'un seul langage pour tout faire</em>, en effet, qu'il s'agisse de l'écriture de la couche statique (le HTML, vérifiant la validité de ce dernier), du Javascript ou du SQL (vérifiant la bonne formation d'une requête), Ocsigen est dôté d'outils et d'extensions de syntaxes pour ne demander au programmeur, qu'une connaissance de Ocaml.</p>
@@ -226,6 +229,167 @@
 <li><code>hello.eliom</code> : Le point d'entrée de l'application, soit le fichier qui enregistrera les services, et qui générera le foncteur de l'application.</li>
 </ul>
 <h4 id="elaguons-linutile">Elaguons l'inutile</h4>
+<p>Comme nous allons reprendre notre application depuis le début, je propose de supprimer le superflu (que nous réécrirons dans les bons fichiers). Notre <code>hello.eliom</code> pourra se limiter à :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Directives d&#39;importation *)</span>
+{shared{
+  <span class="ot">open</span> Eliom_lib
+  <span class="ot">open</span> Eliom_content
+  <span class="ot">open</span> Html5<span class="kw">.</span>D
+}}
+
+
+<span class="co">(* Création du module principal pour  *)</span>
+<span class="co">(* enregistrer les services, notamment *)</span>
+<span class="ot">module</span> Hello_app =
+  Eliom_registration<span class="kw">.</span><span class="dt">App</span> (
+    <span class="kw">struct</span>
+      <span class="kw">let</span> application_name = <span class="st">&quot;hello&quot;</span>
+    <span class="kw">end</span>)</code></pre>
+<p>En compilant via <code>make test.byte</code>, tout marchera sauf qu'en se rendant à l'adresse du serveur (<a href="http://localhost:8000">ici</a>, j'ai modifié, dans le <code>Makefile.options</code> le port de test car <code>8080</code> est déjà utilisé par <code>Yaws</code>, un serveur Erlang) on arrive sur une erreur 404. Ce qui est logique car aucun service n'a été défini.</p>
+<h4 id="une-page-type">Une page type</h4>
+<p>Avant de concevoir les services, et s'intéresser aux paramètres, nous allons généraliser le comportement d'une page type. Pour cela rendons nous dans le fichier <code>gui.eliom</code>.</p>
+<p>Ce que je propose, c'est d'importer les modules dont nous aurons besoin pour construire le squelette d'une page, ensuite de réaliser trois quatre fonctions.</p>
+<ul>
+<li>Une fonction pour créer une page vide</li>
+<li>Une fonction pour le header</li>
+<li>Une fonction pour le footer</li>
+<li>Une fonction pour créer une page avec le header et le footer.</li>
+</ul>
+<p>Ce qui nous permettra de créer rapidement une page via une simple fonction, ne prenant en argument que la liste de balises nécéssaire à la création du contenu que nous désirons pour une page:</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Les importations ne doivent être, cette fois  *)</span>
+<span class="co">(* effectives uniquement côté serveur, donc pas la peine  *)</span>
+<span class="co">(* d&#39;utiliser {{shared{{}} *)</span>
+
+<span class="co">(* contient les modules de création de contenu (Html5)*)</span>
+<span class="ot">open</span> Eliom_content
+<span class="co">(* Contient le HTML avec la sémantique du DOM, pour les </span>
+<span class="co">   application hybrides</span>
+<span class="co"> *)</span>
+<span class="ot">open</span> Html5<span class="kw">.</span>D
+
+
+<span class="co">(* Squelette d&#39;une page *)</span>
+<span class="kw">let</span> skeleton title body_content = 
+  Eliom_tools<span class="kw">.</span>F<span class="kw">.</span>html
+    ~title:title
+    ~css:[[<span class="st">&quot;css&quot;</span>; <span class="st">&quot;hello.css&quot;</span>]]
+    (Html5<span class="kw">.</span>F<span class="kw">.</span>body body_content)
+
+<span class="co">(* Header et footer *)</span>
+<span class="kw">let</span> header = 
+  [div 
+     [
+       h1 [pcdata <span class="st">&quot;Application Hello !&quot;</span>]; 
+       hr (); 
+     ]
+  ]
+<span class="kw">let</span> footer = 
+  [div
+    [
+      hr (); 
+      span [pcdata <span class="st">&quot;Fin de l&#39;application&quot;</span>]
+    ]
+  ]
+
+<span class="co">(* Page type *)</span>
+<span class="kw">let</span> std_page body_content =  
+  skeleton 
+    <span class="st">&quot;Hello World application&quot;</span>
+    (header @ body_content @ footer)</code></pre>
+<p>Concrètement, on reproduit, mais de manière plus fragmentée le code fournit par <code>eliom-distillery</code>. La nuance entre <code>Html5.F</code> et <code>Html5.D</code> est assez sensible mais concrètement, retenons juste que les éléments construits par <code>D</code> permettent d'être <em>client-server</em> et manipulé dans les deux côtés. A priori, la structure de notre page (<code>&lt;html&gt;&lt;head&gt;...&lt;/head&gt;&lt;body&gt;</code>) ne devra jamais être manipulée par du Javascript, on peut la créer via le module <code>F</code>. Le contenu de la page pouvant être potentiellement manipulé, on utilisera <code>D</code>.<br />Le manuel de <code>Eliom</code> conseille, pour les débutants de n'utiliser que <code>D</code>. Cependant, je me base sur le code fourni par <code>eliom-distillery</code> pour le squelette de ma page, donc j'utilise <code>F</code>.</p>
+<h4 id="construction-de-html">Construction de HTML</h4>
+<p>Dans la création du module <code>gui.eliom</code>, nous avons créé du Html via <code>TyXML</code>. Voyons en détail comment cela fonctionne. Typiquement les balises sont des fonctions ayant le même nom que leur représentation HTML. De ce fait :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">div [pcdata <span class="st">&quot;Hello&quot;</span>]</code></pre>
+<p>produira le code HTML suivant:</p>
+<pre class="sourceCode html"><code class="sourceCode html"><span class="kw">&lt;div&gt;</span>Hello<span class="kw">&lt;/div&gt;</span></code></pre>
+<p>TyXML utilise des types fantômes pour représenter les balises, vous pouvez vous référer à <a href="phantoms.html">cet article</a> qui évoque sommairement le concept sous-jacent. et le <code>pcdata</code> sert à définir du &quot;texte brute&quot;. C'est typiquement le texte racine de chaque balise pouvant afficher du texte.<br />Voyons un exemple un peu plus complexe et essayons de générer ce code via TyXML :</p>
+<pre class="sourceCode html"><code class="sourceCode html"><span class="kw">&lt;div&gt;</span>
+  <span class="kw">&lt;h1&gt;</span>Bonjour !<span class="kw">&lt;/h1&gt;</span>
+  <span class="kw">&lt;hr</span> <span class="kw">/&gt;</span>
+  <span class="kw">&lt;div&gt;</span>
+    <span class="kw">&lt;p&gt;</span>Voici la liste de mes envies :<span class="kw">&lt;/p&gt;</span>
+    <span class="kw">&lt;ul&gt;</span>
+      <span class="kw">&lt;li&gt;</span>Une glace<span class="kw">&lt;/li&gt;</span>
+      <span class="kw">&lt;li&gt;</span>Le livre Real World OCaml<span class="kw">&lt;/li&gt;</span>
+      <span class="kw">&lt;li&gt;</span>Une chemise blanche<span class="kw">&lt;/li&gt;</span>
+    <span class="kw">&lt;/ul&gt;</span>
+  <span class="kw">&lt;/div&gt;</span>
+<span class="kw">&lt;/div&gt;</span></code></pre>
+<p>Voici sa représentation TyXML :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">div
+[
+  h1 [pcdata <span class="st">&quot;Bonjour !&quot;</span>];
+  hr ();
+  div
+  [
+    p [pcdata <span class="st">&quot;Voici la liste de mes envies :&quot;</span>];
+    ul
+    [
+      li [pcdata <span class="st">&quot;Une glace&quot;</span>];
+      li [pcdata <span class="st">&quot;Le livre Real World OCaml&quot;</span>];
+      li [pcdata <span class="st">&quot;Une chemise blanche&quot;</span>];
+    ]
+  ]
+]</code></pre>
+<p>Les retours à la ligne ne sont absolument pas obligatoire, ce que l'on retient, c'est qu'une balise pouvant en contenir d'autres a cette sémantique : <code>balise [liste d'autres balises]</code> et qu'une balise &quot;unique&quot;, de cette forme <code>&lt;balise /&gt;</code> (soit <code>&lt;hr /&gt;</code> ou <code>&lt;br /&gt;</code> par exemple) respecte cette sémantique : <code>balise ()</code>.</p>
+<p>Un des avantage de passer par TyXML est de garantir que le HTML produit est correctement typé (selon le W3C) (essayons donc de mettre une <code>&lt;div&gt;</code> dans un <code>&lt;span&gt;</code> et le code ne compilera même pas !), mais aussi d'être généralement plus court à écrire.</p>
+<p>Il est évidemment possible d'enrichir les balises d'attributs, pour ça on utilise l'argument labelisé <code>~a</code>, qui attend une liste d'attributs. Par exemple une liste de classes, ou un identifiant. Par exemple :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">div
+  ~a:[a_id <span class="st">&quot;identifiant&quot;</span>, a_class [<span class="st">&quot;rouge; vert&quot;</span>]]
+  [
+     span ~a:[a_id <span class="st">&quot;say_hello&quot;</span>] [pcdata <span class="st">&quot;Hello !&quot;</span>]
+  ]</code></pre>
+<p>Donnera le code HTML suivant :</p>
+<pre class="sourceCode html"><code class="sourceCode html"><span class="kw">&lt;div</span><span class="ot"> id=</span><span class="st">&quot;identifiant&quot;</span><span class="ot"> class=</span><span class="st">&quot;rouge vert&quot;</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;span</span><span class="ot"> id=</span><span class="st">&quot;say_hello&quot;</span><span class="kw">&gt;</span>Hello !<span class="kw">&lt;/span&gt;</span>
+<span class="kw">&lt;/div&gt;</span></code></pre>
+<p>Maintenant, la compréhension de <code>gui.eliom</code> devrait être plus évidente et nous pouvons même modifier ce dernier pour que le contenu donné à la fonction <code>std_page</code> soit placé dans une div à l'identifiant <code>content</code> et que le header et le footer soient aussi identifié !</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Les importations ne doivent être, cette fois  *)</span>
+<span class="co">(* effectives uniquement côté serveur, donc pas la peine  *)</span>
+<span class="co">(* d&#39;utiliser {{shared{{}} *)</span>
+
+<span class="co">(* contient les modules de création de contenu (Html5)*)</span>
+<span class="ot">open</span> Eliom_content
+<span class="co">(* Contient le HTML avec la sémantique du DOM, pour les </span>
+<span class="co">   application hybrides</span>
+<span class="co"> *)</span>
+<span class="ot">open</span> Html5<span class="kw">.</span>D
+
+
+<span class="co">(* Squelette d&#39;une page *)</span>
+<span class="kw">let</span> skeleton title body_content = 
+  Eliom_tools<span class="kw">.</span>F<span class="kw">.</span>html
+    ~title:title
+    ~css:[[<span class="st">&quot;css&quot;</span>; <span class="st">&quot;hello.css&quot;</span>]]
+    (Html5<span class="kw">.</span>F<span class="kw">.</span>body body_content)
+
+<span class="co">(* Header et footer *)</span>
+<span class="kw">let</span> header = 
+  div 
+    ~a:[a_id <span class="st">&quot;header&quot;</span>]
+    [
+      h1 [pcdata <span class="st">&quot;Application Hello !&quot;</span>]; 
+      hr (); 
+    ]
+
+<span class="kw">let</span> footer = 
+  div
+    ~a:[a_id <span class="st">&quot;footer&quot;</span>]
+    [
+      hr (); 
+      span [pcdata <span class="st">&quot;Fin de l&#39;application&quot;</span>]
+    ]
+    
+<span class="co">(* Page type *)</span>
+<span class="kw">let</span> std_page body_content =  
+  skeleton 
+    <span class="st">&quot;Hello World application&quot;</span>
+    [
+      header; 
+      div ~a:[a_id <span class="st">&quot;content&quot;</span>] body_content;
+      footer
+    ]</code></pre>
+<p>Notre code est plus lisible, et au moyen de CSS, on peut accéder à priori à chaque élément constituants de notre page car le header, le footer et le contenu sont identifiés !</p>
 </div>
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
