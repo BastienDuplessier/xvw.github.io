@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Développement d'applications web  avec Ocsigen</title>
+    <title>Introduction naïve au développement d'applications web  avec Ocsigen</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="../default.css">
@@ -13,7 +13,7 @@
       <a href="../index.html">Retourner a l'index</a>
       <hr id="top" name="top"/>
       <div id="innercontent">
-<h1>Développement d'applications web avec Ocsigen</h1>
+<h1>Introduction naïve au développement d'applications web avec Ocsigen</h1>
 <blockquote>
 <p>Pendant très longtemps, j'ai été amené à concevoir des applications web. J'ai eu l'occasion d'expérimenter plusieurs technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et Yaws + Erlang). Je dois avouer n'avoir été que trop rarement satisfait par ces outils, principalement car depuis ma découverte des langages fonctionnels statiquement typés, j'ai réellement du mal à m'en passer. C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été véritablement emballé. Cependant, Ocsigen est, actuellement, pauvre en ressource et assez dépaysant (cette opinion n'est absolument pas à prendre comme un reproche mais plus comme une constatation et s'explique par l'innovation démontrée dans Ocsigen et sa jeunesse)), j'ai donc décidé de lui accorder un petit article proposant à sa fin, une implémentation pratique où chaque étape sera décrite !</p>
 </blockquote>
@@ -390,6 +390,248 @@
       footer
     ]</code></pre>
 <p>Notre code est plus lisible, et au moyen de CSS, on peut accéder à priori à chaque élément constituants de notre page car le header, le footer et le contenu sont identifiés !</p>
+<h4 id="le-premier-service">Le premier service</h4>
+<p>Nous allons pouvoir attaquer notre premier service, son rôle sera que dès que nous nous rendrons sur la page d'accueil de notre application, on affichera, dans une page type, le texte &quot;Bienvenue le monde&quot;. C'est un service qui ne prendra aucun argument. Il permettra de nous familiariser avec le conception de services.<br />Rendons nous dans le module <code>services.eliom</code> et créons notre premier service :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Directives d&#39;importation *)</span>
+
+<span class="co">(* Raccourci vers le module qui permet de définir </span>
+<span class="co"> des services en tout genre *)</span>
+<span class="ot">open</span> Eliom_service
+
+<span class="co">(* Raccourci vers le module qui expose les types </span>
+<span class="co">   d&#39;entrée du service *)</span>
+<span class="ot">open</span> Eliom_parameter
+
+<span class="co">(* Définition du premier service *)</span>
+<span class="kw">let</span> main = 
+  App<span class="kw">.</span>service
+    ~path:[] 
+    ~get_params:<span class="dt">unit</span>
+    ()</code></pre>
+<p>Typiquement, après les directives d'importation, pour rendre le code moins verbeux, on défini dans la variable <code>main</code> un <code>App service</code>, soit un service attaché à l'url racine. Si on avait mit comme path : <code>~path:[&quot;a&quot;;&quot;b&quot;]</code>, l'accès au service aurait été <code>monsite.com/a/b</code>. Cependant ici, nous avons défini le service mère, donc accessible via la racine de l'application. Et on a défini qu'il ne prenait aucun argument <code>GET</code>.</p>
+<p>Attention, des services peuvent pointer vers le même chemin pour peu que leur paramètres (GET ou POST) soient différents.</p>
+<blockquote>
+<p>Le service défini est un App.service, soit un service &quot;Application&quot;, il existe plusieurs types de services différents et nous tâcherons d'en survoler plusieurs durant cette initiation. Pour le moment, nous nous limitons à un App.service.</p>
+</blockquote>
+<p>Maintenant que notre service est préparé, nous allons pouvoir créer la fonction que le service renverra (lorsque nous l'enregistrerons). Pour ça nous allons créer le module <code>pages.eliom</code> dans lequel nous créerons une fonction <code>main</code> dont le rôle sera de renvoyer la page correspondante au service.</p>
+<p>Une fonction de renvoi de service à deux arguments, correspondants respectivements aux paramètres <strong>GET</strong> et <strong>POST</strong>. Notre service <code>main</code> n'a pas de paramètres, il prendra donc deux <code>unit</code>.<br />Il est important de retenir que chaque page doit être mise dans un <strong>contexte Lwt</strong> donc chaque page doit être renvoyée au moyen de la fonction <code>Lwt.return</code>. Pour ça, nous allons modifier légèrement notre fonction <code>std_page</code> pour ne plus avoir à s'en occuper.</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Page type *)</span>
+<span class="kw">let</span> std_page body_content =  
+  Lwt<span class="kw">.</span>return (
+      skeleton 
+       <span class="st">&quot;Hello World application&quot;</span>
+       [
+         header; 
+         div ~a:[a_id <span class="st">&quot;content&quot;</span>] body_content;
+         footer
+       ]
+    )</code></pre>
+<p>Nous pouvons maintenant nous occuper de <code>Pages.main</code> qui sera très simple car son rôle est simplement d'afficher &quot;Bienvenue le monde !&quot; :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* contient les modules de création de contenu (Html5)*)</span>
+<span class="ot">open</span> Eliom_content
+<span class="co">(* Contient le HTML avec la sémantique du DOM, pour les </span>
+<span class="co">   application hybrides</span>
+<span class="co"> *)</span>
+<span class="ot">open</span> Html5<span class="kw">.</span>D
+<span class="ot">open</span> Gui
+
+<span class="co">(* Service principal *)</span> 
+<span class="kw">let</span> main () () = 
+  std_page 
+    [
+      h2 [pcdata <span class="st">&quot;Bienvenue le monde !&quot;</span>];
+    ]</code></pre>
+<p>Comme vous pouvez le voir, nous avons importé les mêmes modules que dans le module <code>gui.eliom</code> pour pouvoir écrire confortablement du HTML et nous avons ajouté l'importation du module <code>gui.eliom</code> pour pouvoir appeler directement la fonction <code>std_page</code> (mais c'est vraiment de la coquetterie car j'aurais pu simplement préfixer ma fonction de cette manière : <code>Gui.std_page</code>).</p>
+<p>Maintenant que nous avons tous les ingrédients requis, nous pouvons <strong>enregistrer</strong> notre service pour le rendre accessible. Les personnes qui auraient tenté de compiler le projet auraient eu droit à une belle erreur indiquant que le service n'est pas enregistré. Rendons nous dans le module <code>hello.eliom</code> et procédons à l'enregistrement du module via une fonction exportée par le module <code>Hello_app</code> nommée <code>register</code> et dont la sémantique est :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">Hello_app<span class="kw">.</span>register
+  ~service:variable_du_service
+  fonction de renvoi</code></pre>
+<p>Donc nous pouvons enrichir notre module <code>hello.eliom</code> de l'ajout du service (situé dans les dernières lignes).</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Directives d&#39;importation *)</span>
+{shared{
+  <span class="ot">open</span> Eliom_lib
+  <span class="ot">open</span> Eliom_content
+  <span class="ot">open</span> Html5<span class="kw">.</span>D
+}}
+
+
+<span class="co">(* Création du module principal pour  *)</span>
+<span class="co">(* enregistrer les services, notamment *)</span>
+<span class="ot">module</span> Hello_app =
+  Eliom_registration<span class="kw">.</span><span class="dt">App</span> (
+    <span class="kw">struct</span>
+      <span class="kw">let</span> application_name = <span class="st">&quot;hello&quot;</span>
+    <span class="kw">end</span>)
+
+<span class="co">(* Enregistrement du service main *)</span>
+<span class="kw">let</span> _ =
+  Hello_app<span class="kw">.</span>register 
+    ~service:Services<span class="kw">.</span>main 
+    Pages<span class="kw">.</span>main</code></pre>
+<p>Maintenant nous pouvons compiler notre projet et nous rendre à l'adresse du serveur local, notre &quot;Bienvenue le monde !&quot; devrait normalement être affiché dans le gabarit que nous avions établit au moyen de <code>std_page</code>.</p>
+<p>Il est évident que pour n'effectuer qu'un simple &quot;Hello World&quot;, il aurait été sans doute plus facile de ne modifier que le contenu du fichier généré par <code>eliom-distillery</code>, cependant, maintenant, nous bénéficions d'une architecture saine pour concevoir rapidement d'autres services. Ajoutons par exemple un service <code>bonjourNuki</code> qui affichera &quot;Bonjour Nuki !&quot; sur l'url <code>monsite.com/bonjour/nuki</code>:</p>
+<p>Commençons par créer le service dans <code>services.eliom</code> en y ajoutant ceci :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> bonjour_nuki =  
+  App<span class="kw">.</span>service
+    ~path:[<span class="st">&quot;bonjour&quot;</span>;<span class="st">&quot;Nuki&quot;</span>]
+    ~get_params:<span class="dt">unit</span>
+    ()</code></pre>
+<p>Ensuite créons sa page dans <code>pages.eliom</code> en lui ajoutant ceci :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service Bonjour Nuki *)</span>
+<span class="kw">let</span> bonjour_nuki () () = 
+  std_page 
+    [
+      h2 [pcdata <span class="st">&quot;Bonjour Nuki&quot;</span>];
+    ]</code></pre>
+<p>Et terminons par enregistrer le service de <code>hello.eliom</code> en y ajoutant ceci :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Enregistrement du service Bonjour Nuki *)</span>
+<span class="kw">let</span> _ = 
+  Hello_app<span class="kw">.</span>register
+    ~service:Services<span class="kw">.</span>bonjour_nuki
+    Pages<span class="kw">.</span>bonjour_nuki</code></pre>
+<p>Après le lancement de la commande <code>make test.byte</code>, on peut se rendre à l'adresse (sur le port 8000 dans mon cas, car j'ai modifié mon Makefile.options) : <a href="http://localhost:8000/bonjour/Nuki">http://localhost:8000/bonjour/Nuki</a> qui affichera &quot;Bonjour Nuki&quot;</p>
+<h4 id="utilisation-des-paramètres-get">Utilisation des paramètres GET</h4>
+<p>Notre service <code>bonjourNuki</code> est très mignon, mais franchement utile, nous aimerions un peu plus de généricité en proposant un service capable, via l'url, de désigner la personne à saluer. On peut le faire via les paramètres. Nous allons nous servir des variables <strong>GET</strong> pour passer un prénom en argument et le saluer. Pour cela, je propose un nouveau service <code>bonjour</code> qui aura une forme un peu différente du précédent. Premièrement, supprimons tout ce qui est relatif à notre service <code>bonjourNuki</code> et lançons nous (dans <code>services.eliom</code>) :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Un service pour saluer *)</span>
+<span class="kw">let</span> bonjour = 
+  App<span class="kw">.</span>service
+    ~path:[:<span class="st">&quot;bonjour&quot;</span>]
+    ~get_params:(<span class="dt">string</span> <span class="st">&quot;prenom&quot;</span>)
+    ()</code></pre>
+<p>Au contraire des deux précédents services, nous lui adjoignont un paramètres <strong>GET</strong> de type string et dont le nom est <code>prenom</code>. L'existence de ce paramètre implique donc que le premier argument de la fonction qui retourne la page doit être une chaîne de caractère :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service pour dire bonjour *)</span> 
+<span class="kw">let</span> bonjour prenom () = 
+  std_page
+    [
+      h2 [pcdata (<span class="st">&quot;Bonjour &quot;</span> ^ prenom)]
+    ]</code></pre>
+<p>Par contre, l'enregistrement du service ne change absolument pas (et c'est un des intérêt principale de notre découpe modulaire) :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Enregistrement du services Bonjour *)</span> 
+<span class="kw">let</span> _ = 
+  Hello_app<span class="kw">.</span>register
+    ~service:Services<span class="kw">.</span>bonjour
+    Pages<span class="kw">.</span>bonjour</code></pre>
+<p>Concrètement, nous avons précisé qu'un service <code>bonjour</code> attend un paramètre (passé via l'url) nommé <code>prénom</code>. La fonction page prend ce paramètre en argument et l'affiche. En compilant notre projet, le service principal est toujours accessible et si nous nous rendons à l'url <a href="http://localhost:8000/bonjour?prenom=Nuki">http://localhost:8000/bonjour?prenom=Nuki</a>, notre application affiche bien &quot;Bonjour Nuki&quot;. Vous pouvez remplacer le prénom par n'importe quelle chaine de caractères et notre superbe application saluera bien le prénom passé en argument.</p>
+<p>Si nous tention d'accéder au service <code>bonjour</code> sans lui passer d'argument, ou en lui en passant trop, ou en ommettant le paramètre prénom, l'application affichera une erreur <code>Wront parameters arguments</code>.<br />En effet, les services sont typés et il n'est pas possible d'accéder à une page au travers d'un chemin qui n'a pas été pensé. C'est un gain de temps monumental en vérification. Personnellement, je me souviens de PHP ou je devais vérifier chacune de mes variables pour garantir le bon déroulement de la page. Cette vérification s'ajoute à l'impossibilité de produire du HTML non valide comme un gain de temps réel dans l'écriture d'application web!</p>
+<h4 id="a-propos-de-la-sémantique-des-paramètres">A propos de la sémantique des paramètres</h4>
+<blockquote>
+<p>Même si nous n'avons pas encore survolé les paramètres POST, cette précision est valable pour eux aussi.</p>
+</blockquote>
+<p>Actuellement, nous n'avons travaillé qu'avec un seul paramètre, ça se prêtait bien car la fonction de renvoi ne peut prendre que deux paramètres, un pour les arguments <strong>GET</strong> (le premier) et un pour les arguments <strong>POST</strong> (le second) (ce qui introduit implicitement déjà le fait que l'on peut avoir des services prenant des arguments <strong>POST</strong> ET <strong>GET</strong>).</p>
+<p>Concrètement il est évidemment possible d'utiliser de multiples arguments, par exemple, pour créer un service demandant un prénom, un nom, un age (par exemple), on pourrait imaginer ce service :</p>
+<p>Définition du service dans le module <code>services.eliom</code>:</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> infos = 
+  App<span class="kw">.</span>service
+    ~path:[<span class="st">&quot;informer&quot;</span>]
+    ~get_params:(
+      <span class="dt">string</span> <span class="st">&quot;prenom&quot;</span>
+      ** <span class="dt">string</span> <span class="st">&quot;nom&quot;</span>
+      ** <span class="dt">int</span> <span class="st">&quot;age&quot;</span>
+    ) ()</code></pre>
+<p>On se sert de l'opérateur <code>**</code> pour construire une valeur de services multiples. Du côté de la fonction de renvoi, le paramètre GET sera représenté par <em>n-uplet</em> ayant une forme similaire à une liste :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service de renvoi d&#39;information *)</span>
+<span class="kw">let</span> infos (prenom, (nom, age)) () = 
+  std_page
+  [
+    ul 
+    [
+      li [
+          strong [pcdata <span class="st">&quot;Prenom : &quot;</span>];
+          pcdata prenom
+        ];
+      li [
+          strong [pcdata <span class="st">&quot;Nom : &quot;</span>];
+          pcdata nom
+        ];
+      li [
+          strong [pcdata <span class="st">&quot;Age : &quot;</span>];
+          pcdata (string_of_int age)
+        ];
+      ]
+    ]</code></pre>
+<p>Le type des paramètres de la fonction seront <code>(string * (string * int)) -&gt; unit</code>. La raison qui explique cette forme est que les services sont typés et une manière de représenter des données conjointes est l'utilisation de <em>n-uplet</em>.</p>
+<p>Comme pour les autres services, l'enregistrement est assez simple (et sémantiquement identique aux autres) :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Enregistrement du services infos *)</span> 
+<span class="kw">let</span> _ = 
+  Hello_app<span class="kw">.</span>register
+    ~service:Services<span class="kw">.</span>infos
+    Pages<span class="kw">.</span>infos</code></pre>
+<p>Après compilation, je vous invite à tester <a href="http://localhost:8000/informer?prenom=Xavier&amp;age=25&amp;nom=VDW">http://localhost:8000/informer?prenom=Xavier&amp;age=25&amp;nom=VDW</a> qui donne des informations sur ma personne. Comme vous pouvez le voir, les arguments doivent avoir le bon type (mettre <code>chevre</code> en valeur au paramètre <code>age</code> renverra une erreur), par contre, ils ne doivent pas spécialement être dans le bon ordre.</p>
+<h4 id="pour-plus-desthétique-dans-les-urls">Pour plus d'esthétique dans les URL's</h4>
+<p>Il est courant de ne plus voir des url's chargé de paramètres <strong>GET</strong>. Par exemple la page <code>http://www.monsite.com?page=News&amp;id=45</code> devient souvent (pour plaire aux moteurs de recherche) <code>http://www.monsite.com/News/45</code>. On appelle ça de la réécriture d'URL ou de l'URL rewritting. Typiquement il s'agit de paramétrer une route vers une page. Ocsigen dispose d'un mécanisme permettant de rendre les chemins plus agréable à la lecture, au moyen de la fonction <code>suffix</code> sur les paramètres. Réécrivons notre service <code>bonjour</code> pour qu'au lieu de cette adresse <code>http://localhost:8000/bonjour?prenom=Nuki</code> on utilise <code>http://localhost:8000/bonjour/Nuki</code>. Il suffit de modifier la définition de notre service de cette manière :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Un service pour saluer *)</span>
+<span class="kw">let</span> bonjour = 
+  App<span class="kw">.</span>service
+    ~path:[<span class="st">&quot;bonjour&quot;</span>]
+    ~get_params:(suffix (<span class="dt">string</span> <span class="st">&quot;prenom&quot;</span>))
+    ()</code></pre>
+<p>L'usage de la fonction <code>suffix</code>, présente dans le module <code>Eliom_parameter</code> permet cette représentation. D'ailleurs il existe d'autre fonctionnalité, comme par exemple celle de rendre certains paramètres optionnels. Pour plus de précisions, je vous invite à vous rendre sur <a href="http://ocsigen.org/eliom/4.1/api/server/Eliom_parameter">la page du manuel correspondante</a>.</p>
+<h4 id="création-de-liens-interne-à-lapplication">Création de liens interne à l'application</h4>
+<p>Un dernier point concernant les paramètres <strong>GET</strong> ou plus généralement en rapport avec les relations entre les services est la construction de liens. Contrairement à des outils plus classiques, Ocsigen crée un lien interne à l'application en créant un lien vers un service. L'avantage de cette méthode est qu'elle permet de prévenir les liens cassés. On ne peut pointer vers un service qui n'existe pas ou encore vers un service en lui donnant les mauvais argument. Pour ça on se sert de la fonction <code>Html.D.a</code>.</p>
+<p>Nous allons ajouter sur notre service principal un lien pour dire bonjour à un certain <code>Nuki</code>, pour ça, il suffit de modifier la fonction <code>Pages.main</code> :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service principal *)</span> 
+<span class="kw">let</span> main () () = 
+  std_page 
+    [
+      h2 [pcdata <span class="st">&quot;Bienvenue le monde !&quot;</span>];
+      a 
+        ~service:Services<span class="kw">.</span>bonjour
+        [pcdata <span class="st">&quot;Dire bonjour à Nuki&quot;</span>]
+        <span class="st">&quot;Nuki&quot;</span>
+    ]</code></pre>
+<p>Le fonctionnement de la fonction <code>a</code> est assez évident. On spécifie le service vers lequel le lien doit pointer. Le texte à afficher et le dernier argument sera le ou les paramètres <strong>GET</strong>. (Dans le cas de paramètres multiples, on utilisera la forme <code>(parametre1, (parametre2, parametre3))</code> par exemple).</p>
+<blockquote>
+<p>A partir de maintenant, je ne rappellerai plus explicitement les fichiers dans lesquels ajouter les portions de codes que je montre car je pense que vous devriez être familier avec la structure pour laquelle j'ai optée. On retiendra que la définition formelle d'un service se fera dans services.eliom, l'enregistrement des services dans hello.eliom, la construction des pages dans pages.eliom et les assets de l'interface dans gui.eliom.</p>
+</blockquote>
+<h4 id="des-formulaires">Des formulaires</h4>
+<p>Maintenant que nous sommes familier avec la construction de services avec des paramètres <strong>GET</strong>, nous pouvons attaquer la construction de services avec des paramètres <strong>POST</strong>.<br />La première chose à faire est de construire un service prenant en argument des paramètres <strong>POST</strong>. Pour ça il faudra enregistrer un autre type de service :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> post_bonjour = 
+  App<span class="kw">.</span>post_service
+    ~fallback:main
+    ~post_params:(<span class="dt">string</span> <span class="st">&quot;prenom&quot;</span>)
+    ()</code></pre>
+<p>Au contraire d'un service <em>normal</em>, un service <strong>POST</strong> ne possède pas de <strong>~path</strong> et n'est donc pas <em>bookmarkable</em>. En effet, on n'y accède pas via une adresse mais via un formulaire. L'argument <strong>~fallback</strong> permet de rédiriger le service vers un autre service en cas d'erreur (de mauvais typage par exemple). Dans notre cas, on fera pointer le service vers le service par défaut.</p>
+<p>Nous pouvons implémenter la page, elle sera fortement semblable à la page du service <code>bonjour</code> sauf que l'argument sera au POST et non au GET :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service pour dire bonjour via un post*)</span> 
+<span class="kw">let</span> post_bonjour () prenom = 
+  std_page
+    [
+      h2 [pcdata (<span class="st">&quot;Bonjour &quot;</span> ^ prenom)]
+    ]</code></pre>
+<p>Comme pour les services habituels, il nous faut l'enregistrer pour pouvoir l'utiliser. Une fois plus, il y a bien peu de choses qui changent:</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Enregistrement du service post_bonjour *)</span>
+<span class="kw">let</span> _ = 
+  Hello_app<span class="kw">.</span>register
+    ~service:Services<span class="kw">.</span>post_bonjour
+    Pages<span class="kw">.</span>post_bonjour</code></pre>
+<p>Maintenant il faut construire un formulaire. Il serait possible de les créer manuellement, mais Ocsigen a prévu (une fois de plus) une manière d'automatiser la construction de formulaires. Pour créer un formulaire, on utilise la fonction <code>Html5.D.post_form</code>. Elle prend en argument un service (vers laquelle le formulaire doit pointer) et une fonction chargée de construire les formulaires. Par exemple, modifions le code de notre service <code>main</code> pour afficher un formulaire pointant vers notre services fraîchement créer :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service principal *)</span> 
+<span class="kw">let</span> main () () = 
+  <span class="kw">let</span> form prenom =
+    [
+      string_input
+    ~name:prenom 
+    ~input_type:<span class="dt">`Text</span>
+    (); 
+      string_input
+    ~input_type:<span class="dt">`Submit</span>
+    ();
+    ]
+  <span class="kw">in</span> 
+  std_page 
+    [
+      h2 [pcdata <span class="st">&quot;Bienvenue le monde !&quot;</span>];
+      a 
+    ~service:Services<span class="kw">.</span>bonjour
+    [pcdata <span class="st">&quot;Dire bonjour à Nuki&quot;</span>]
+    <span class="st">&quot;Nuki&quot;</span>; 
+      br (); 
+      post_form 
+    ~service:Services<span class="kw">.</span>post_bonjour
+    form ()
+    ]</code></pre>
+<p>Concrètement, les deux ajouts importants sont la fonction <code>form</code>, qui servira a générer le formulaire. Il s'agit d'une fonction prenant en argument le paramètre <strong>POST</strong> (en respectant la forme expliquée plus haut : <code>(a, (b, c))</code>. Cette fonction renvoie une liste de balise générée avec TyXML. On se sert des fonctions <code>string_input</code> (et de l'attribut <strong>~name</strong> pour le champ de texte servant a récupérer un paramètre qui lui prendra comme nom un des argument du formulaire).</p>
+<p>Ensuite, on se sert de la fonction <code>post_form</code> pour créer le formulaire en lui donnant le service pointé, le formulaire et <code>unit</code>. Vous pouvez compiler votre application et vous verrez que la page d'accueil est munie d'un petit formulaire fonctionnel, pointant vers le service <code>post_bonjour</code>.</p>
 </div>
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>

@@ -1,4 +1,4 @@
-% Développement d\'applications web  avec Ocsigen
+% Introduction naïve au développement d\'applications web  avec Ocsigen
 % Xavier Van de Woestyne
 % Decembre 2014
 
@@ -622,3 +622,347 @@ let std_page body_content =
 
 ```
 Notre code est plus lisible, et au moyen de CSS, on peut accéder à priori à chaque élément constituants de notre page car le header, le footer et le contenu sont identifiés !
+
+#### Le premier service
+
+Nous allons pouvoir attaquer notre premier service, son rôle sera que dès que nous nous rendrons sur la page d'accueil de notre application, on affichera, dans une page type, le texte "Bienvenue le monde". C'est un service qui ne prendra aucun argument. Il permettra de nous familiariser avec le conception de services. \
+Rendons nous dans le module `services.eliom` et créons notre premier service :
+
+```ocaml
+(* Directives d'importation *)
+
+(* Raccourci vers le module qui permet de définir 
+ des services en tout genre *)
+open Eliom_service
+
+(* Raccourci vers le module qui expose les types 
+   d'entrée du service *)
+open Eliom_parameter
+
+(* Définition du premier service *)
+let main = 
+  App.service
+    ~path:[] 
+    ~get_params:unit
+    ()
+
+```
+Typiquement, après les directives d'importation, pour rendre le code moins verbeux, on défini dans la variable `main` un `App service`, soit un service attaché à l'url racine. Si on avait mit comme path : `~path:["a";"b"]`, l'accès au service aurait été `monsite.com/a/b`. Cependant ici, nous avons défini le service mère, donc accessible via la racine de l'application. Et on a défini qu'il ne prenait aucun argument `GET`.
+
+Attention, des services peuvent pointer vers le même chemin pour peu que leur paramètres (GET ou POST) soient différents.
+
+> Le service défini est un App.service, soit un service "Application", il existe plusieurs types de services différents et nous tâcherons d'en survoler plusieurs durant cette initiation. Pour le moment, nous nous limitons à un App.service.
+
+Maintenant que notre service est préparé, nous allons pouvoir créer la fonction que le service renverra (lorsque nous l'enregistrerons). Pour ça nous allons créer le module `pages.eliom` dans lequel nous créerons une fonction `main` dont le rôle sera de renvoyer la page correspondante au service.
+
+Une fonction de renvoi de service à deux arguments, correspondants respectivements aux paramètres **GET** et **POST**. Notre service `main` n'a pas de paramètres, il prendra donc deux `unit`. \
+Il est important de retenir que chaque page doit être mise dans un **contexte Lwt** donc chaque page doit être renvoyée au moyen de la fonction `Lwt.return`. Pour ça, nous allons modifier légèrement notre fonction `std_page` pour ne plus avoir à s'en occuper.
+
+```ocaml
+(* Page type *)
+let std_page body_content =  
+  Lwt.return (
+      skeleton 
+	   "Hello World application"
+	   [
+	     header; 
+	     div ~a:[a_id "content"] body_content;
+	     footer
+	   ]
+    )
+```
+
+Nous pouvons maintenant nous occuper de `Pages.main` qui sera très simple car son rôle est simplement d'afficher "Bienvenue le monde !" :
+
+```ocaml
+(* contient les modules de création de contenu (Html5)*)
+open Eliom_content
+(* Contient le HTML avec la sémantique du DOM, pour les 
+   application hybrides
+ *)
+open Html5.D
+open Gui
+
+(* Service principal *) 
+let main () () = 
+  std_page 
+    [
+      h2 [pcdata "Bienvenue le monde !"];
+    ]
+```
+
+Comme vous pouvez le voir, nous avons importé les mêmes modules que dans le module `gui.eliom` pour pouvoir écrire confortablement du HTML et nous avons ajouté l'importation du module `gui.eliom` pour pouvoir appeler directement la fonction `std_page` (mais c'est vraiment de la coquetterie car j'aurais pu simplement préfixer ma fonction de cette manière : `Gui.std_page`).
+
+Maintenant que nous avons tous les ingrédients requis, nous pouvons **enregistrer** notre service pour le rendre accessible. Les personnes qui auraient tenté de compiler le projet auraient eu droit à une belle erreur indiquant que le service n'est pas enregistré. Rendons nous dans le module `hello.eliom` et procédons à l'enregistrement du module via une fonction exportée par le module `Hello_app` nommée `register` et dont la sémantique est :
+
+```ocaml
+Hello_app.register
+  ~service:variable_du_service
+  fonction de renvoi
+```
+
+Donc nous pouvons enrichir notre module `hello.eliom` de l'ajout du service (situé dans les dernières lignes).
+
+```ocaml
+(* Directives d'importation *)
+{shared{
+  open Eliom_lib
+  open Eliom_content
+  open Html5.D
+}}
+
+
+(* Création du module principal pour  *)
+(* enregistrer les services, notamment *)
+module Hello_app =
+  Eliom_registration.App (
+    struct
+      let application_name = "hello"
+    end)
+
+(* Enregistrement du service main *)
+let _ =
+  Hello_app.register 
+    ~service:Services.main 
+    Pages.main
+
+```
+
+Maintenant nous pouvons compiler notre projet et nous rendre à l'adresse du serveur local, notre "Bienvenue le monde !" devrait normalement être affiché dans le gabarit que nous avions établit au moyen de `std_page`.
+
+Il est évident que pour n'effectuer qu'un simple "Hello World", il aurait été sans doute plus facile de ne modifier que le contenu du fichier généré par `eliom-distillery`, cependant, maintenant, nous bénéficions d'une architecture saine pour concevoir rapidement d'autres services. Ajoutons par exemple un service `bonjourNuki` qui affichera "Bonjour Nuki !" sur l'url `monsite.com/bonjour/nuki`:
+
+Commençons par créer le service dans `services.eliom` en y ajoutant ceci :
+
+```ocaml
+let bonjour_nuki =  
+  App.service
+    ~path:["bonjour";"Nuki"]
+    ~get_params:unit
+    ()
+```
+
+Ensuite créons sa page dans `pages.eliom` en lui ajoutant ceci :
+
+```ocaml
+(* Service Bonjour Nuki *)
+let bonjour_nuki () () = 
+  std_page 
+    [
+      h2 [pcdata "Bonjour Nuki"];
+    ]
+```
+
+Et terminons par enregistrer le service de `hello.eliom` en y ajoutant ceci :
+
+```ocaml
+(* Enregistrement du service Bonjour Nuki *)
+let _ = 
+  Hello_app.register
+    ~service:Services.bonjour_nuki
+    Pages.bonjour_nuki
+```
+
+Après le lancement de la commande `make test.byte`, on peut se rendre à l'adresse (sur le port 8000 dans mon cas, car j'ai modifié mon Makefile.options) : [http://localhost:8000/bonjour/Nuki](http://localhost:8000/bonjour/Nuki) qui affichera "Bonjour Nuki"
+
+#### Utilisation des paramètres GET
+Notre service `bonjourNuki` est très mignon, mais franchement utile, nous aimerions un peu plus de généricité en proposant un service capable, via l'url, de désigner la personne à saluer. On peut le faire via les paramètres. Nous allons nous servir des variables **GET** pour passer un prénom en argument et le saluer. Pour cela, je propose un nouveau service `bonjour` qui aura une forme un peu différente du précédent. Premièrement, supprimons tout ce qui est relatif à notre service `bonjourNuki` et lançons nous (dans `services.eliom`) :
+
+```ocaml
+(* Un service pour saluer *)
+let bonjour = 
+  App.service
+    ~path:[:"bonjour"]
+    ~get_params:(string "prenom")
+    ()
+```
+
+Au contraire des deux précédents services, nous lui adjoignont un paramètres **GET** de type string et dont le nom est `prenom`. L'existence de ce paramètre implique donc que le premier argument de la fonction qui retourne la page doit être une chaîne de caractère :
+
+```ocaml
+(* Service pour dire bonjour *) 
+let bonjour prenom () = 
+  std_page
+    [
+      h2 [pcdata ("Bonjour " ^ prenom)]
+    ]
+```
+
+Par contre, l'enregistrement du service ne change absolument pas (et c'est un des intérêt principale de notre découpe modulaire) :
+
+```ocaml
+(* Enregistrement du services Bonjour *) 
+let _ = 
+  Hello_app.register
+    ~service:Services.bonjour
+    Pages.bonjour
+```
+
+Concrètement, nous avons précisé qu'un service `bonjour` attend un paramètre (passé via l'url) nommé `prénom`. La fonction page prend ce paramètre en argument et l'affiche. En compilant notre projet, le service principal est toujours accessible et si nous nous rendons à l'url [http://localhost:8000/bonjour?prenom=Nuki](http://localhost:8000/bonjour?prenom=Nuki), notre application affiche bien "Bonjour Nuki". Vous pouvez remplacer le prénom par n'importe quelle chaine de caractères et notre superbe application saluera bien le prénom passé en argument.
+
+Si nous tention d'accéder au service `bonjour` sans lui passer d'argument, ou en lui en passant trop, ou en ommettant le paramètre prénom, l'application affichera une erreur `Wront parameters arguments`. \
+En effet, les services sont typés et il n'est pas possible d'accéder à une page au travers d'un chemin qui n'a pas été pensé. C'est un gain de temps monumental en vérification. Personnellement, je me souviens de PHP ou je devais vérifier chacune de mes variables pour garantir le bon déroulement de la page. Cette vérification s'ajoute à l'impossibilité de produire du HTML non valide comme un gain de temps réel dans l'écriture d'application web!
+
+#### A propos de la sémantique des paramètres
+
+> Même si nous n'avons pas encore survolé les paramètres POST, cette précision est valable pour eux aussi.
+
+Actuellement, nous n'avons travaillé qu'avec un seul paramètre, ça se prêtait bien car la fonction de renvoi ne peut prendre que deux paramètres, un pour les arguments **GET** (le premier) et un pour les arguments **POST** (le second) (ce qui introduit implicitement déjà le fait que l'on peut avoir des services prenant des arguments **POST** ET **GET**).
+
+Concrètement il est évidemment possible d'utiliser de multiples arguments, par exemple, pour créer un service demandant un prénom, un nom, un age (par exemple), on pourrait imaginer ce service :
+
+Définition du service dans le module `services.eliom`:
+
+```ocaml
+let infos = 
+  App.service
+    ~path:["informer"]
+    ~get_params:(
+      string "prenom"
+      ** string "nom"
+      ** int "age"
+    ) ()
+```
+
+On se sert de l'opérateur `**` pour construire une valeur de services multiples. Du côté de la fonction de renvoi, le paramètre GET sera représenté par *n-uplet* ayant une forme similaire à une liste :
+
+```ocaml
+(* Service de renvoi d'information *)
+let infos (prenom, (nom, age)) () = 
+  std_page
+  [
+    ul 
+	[
+	  li [
+	      strong [pcdata "Prenom : "];
+	      pcdata prenom
+	    ];
+	  li [
+	      strong [pcdata "Nom : "];
+	      pcdata nom
+	    ];
+	  li [
+	      strong [pcdata "Age : "];
+	      pcdata (string_of_int age)
+	    ];
+	  ]
+    ]
+```
+
+Le type des paramètres de la fonction seront `(string * (string * int)) -> unit`. La raison qui explique cette forme est que les services sont typés et une manière de représenter des données conjointes est l'utilisation de *n-uplet*.
+
+Comme pour les autres services, l'enregistrement est assez simple (et sémantiquement identique aux autres) :
+
+```ocaml
+(* Enregistrement du services infos *) 
+let _ = 
+  Hello_app.register
+    ~service:Services.infos
+    Pages.infos
+```
+
+Après compilation, je vous invite à tester [http://localhost:8000/informer?prenom=Xavier&age=25&nom=VDW](http://localhost:8000/informer?prenom=Xavier&age=25&nom=VDW) qui donne des informations sur ma personne. Comme vous pouvez le voir, les arguments doivent avoir le bon type (mettre `chevre` en valeur au paramètre `age` renverra une erreur), par contre, ils ne doivent pas spécialement être dans le bon ordre.
+
+#### Pour plus d'esthétique dans les URL's
+Il est courant de ne plus voir des url's chargé de paramètres **GET**. Par exemple la page `http://www.monsite.com?page=News&id=45` devient souvent (pour plaire aux moteurs de recherche) `http://www.monsite.com/News/45`. On appelle ça de la réécriture d'URL ou de l'URL rewritting. Typiquement il s'agit de paramétrer une route vers une page. Ocsigen dispose d'un mécanisme permettant de rendre les chemins plus agréable à la lecture, au moyen de la fonction `suffix` sur les paramètres. Réécrivons notre service `bonjour` pour qu'au lieu de cette adresse `http://localhost:8000/bonjour?prenom=Nuki` on utilise `http://localhost:8000/bonjour/Nuki`. Il suffit de modifier la définition de notre service de cette manière :
+
+```ocaml
+(* Un service pour saluer *)
+let bonjour = 
+  App.service
+    ~path:["bonjour"]
+    ~get_params:(suffix (string "prenom"))
+    ()
+```
+
+L'usage de la fonction `suffix`, présente dans le module `Eliom_parameter` permet cette représentation. D'ailleurs il existe d'autre fonctionnalité, comme par exemple celle de rendre certains paramètres optionnels. Pour plus de précisions, je vous invite à vous rendre sur [la page du manuel correspondante](http://ocsigen.org/eliom/4.1/api/server/Eliom_parameter).
+
+#### Création de liens interne à l'application
+Un dernier point concernant les paramètres **GET** ou plus généralement en rapport avec les relations entre les services est la construction de liens. Contrairement à des outils plus classiques, Ocsigen crée un lien interne à l'application en créant un lien vers un service. L'avantage de cette méthode est qu'elle permet de prévenir les liens cassés. On ne peut pointer vers un service qui n'existe pas ou encore vers un service en lui donnant les mauvais argument. Pour ça on se sert de la fonction `Html.D.a`.
+
+Nous allons ajouter sur notre service principal un lien pour dire bonjour à un certain `Nuki`, pour ça, il suffit de modifier la fonction `Pages.main` :
+
+```ocaml
+(* Service principal *) 
+let main () () = 
+  std_page 
+    [
+      h2 [pcdata "Bienvenue le monde !"];
+      a 
+	    ~service:Services.bonjour
+		[pcdata "Dire bonjour à Nuki"]
+		"Nuki"
+    ]
+```
+
+Le fonctionnement de la fonction `a` est assez évident. On spécifie le service vers lequel le lien doit pointer. Le texte à afficher et le dernier argument sera le ou les paramètres **GET**. (Dans le cas de paramètres multiples, on utilisera la forme `(parametre1, (parametre2, parametre3))` par exemple).
+
+> A partir de maintenant, je ne rappellerai plus explicitement les fichiers dans lesquels ajouter les portions de codes que je montre car je pense que vous devriez être familier avec la structure pour laquelle j'ai optée. On retiendra que la définition formelle d'un service se fera dans services.eliom, l'enregistrement des services dans hello.eliom, la construction des pages dans pages.eliom et les assets de l'interface dans gui.eliom.
+
+#### Des formulaires
+Maintenant que nous sommes familier avec la construction de services avec des paramètres **GET**, nous pouvons attaquer la construction de services avec des paramètres **POST**. \
+La première chose à faire est de construire un service prenant en argument des paramètres **POST**. Pour ça il faudra enregistrer un autre type de service :
+
+```ocaml
+let post_bonjour = 
+  App.post_service
+    ~fallback:main
+    ~post_params:(string "prenom")
+    ()
+```
+Au contraire d'un service *normal*, un service **POST** ne possède pas de **~path** et n'est donc pas *bookmarkable*. En effet, on n'y accède pas via une adresse mais via un formulaire. L'argument **~fallback** permet de rédiriger le service vers un autre service en cas d'erreur (de mauvais typage par exemple). Dans notre cas, on fera pointer le service vers le service par défaut.
+
+Nous pouvons implémenter la page, elle sera fortement semblable à la page du service `bonjour` sauf que l'argument sera au POST et non au GET :
+
+```ocaml
+(* Service pour dire bonjour via un post*) 
+let post_bonjour () prenom = 
+  std_page
+    [
+      h2 [pcdata ("Bonjour " ^ prenom)]
+    ]
+```
+
+Comme pour les services habituels, il nous faut l'enregistrer pour pouvoir l'utiliser. Une fois plus, il y a bien peu de choses qui changent:
+
+```ocaml
+(* Enregistrement du service post_bonjour *)
+let _ = 
+  Hello_app.register
+    ~service:Services.post_bonjour
+    Pages.post_bonjour
+```
+
+Maintenant il faut construire un formulaire. Il serait possible de les créer manuellement, mais Ocsigen a prévu (une fois de plus) une manière d'automatiser la construction de formulaires.
+Pour créer un formulaire, on utilise la fonction `Html5.D.post_form`. Elle prend en argument un service (vers laquelle le formulaire doit pointer) et une fonction chargée de construire les formulaires. Par exemple, modifions le code de notre service `main` pour afficher un formulaire pointant vers notre services fraîchement créer :
+
+```ocaml
+(* Service principal *) 
+let main () () = 
+  let form prenom =
+    [
+      string_input
+	~name:prenom 
+	~input_type:`Text
+	(); 
+      string_input
+	~input_type:`Submit
+	();
+    ]
+  in 
+  std_page 
+    [
+      h2 [pcdata "Bienvenue le monde !"];
+      a 
+	~service:Services.bonjour
+	[pcdata "Dire bonjour à Nuki"]
+	"Nuki"; 
+      br (); 
+      post_form 
+	~service:Services.post_bonjour
+	form ()
+    ]
+```
+Concrètement, les deux ajouts importants sont la fonction `form`, qui servira a générer le formulaire. Il s'agit d'une fonction prenant en argument le paramètre **POST** (en respectant la forme expliquée plus haut : `(a, (b, c))`. Cette fonction renvoie une liste de balise générée avec TyXML. On se sert des fonctions `string_input` (et de l'attribut **~name** pour le champ de texte servant a récupérer un paramètre qui lui prendra comme nom un des argument du formulaire).
+
+Ensuite, on se sert de la fonction `post_form` pour créer le formulaire en lui donnant le service pointé, le formulaire et `unit`. Vous pouvez compiler votre application et vous verrez que la page d'accueil est munie d'un petit formulaire fonctionnel, pointant vers le service `post_bonjour`.
