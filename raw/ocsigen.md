@@ -966,3 +966,37 @@ let main () () =
 Concrètement, les deux ajouts importants sont la fonction `form`, qui servira a générer le formulaire. Il s'agit d'une fonction prenant en argument le paramètre **POST** (en respectant la forme expliquée plus haut : `(a, (b, c))`. Cette fonction renvoie une liste de balise générée avec TyXML. On se sert des fonctions `string_input` (et de l'attribut **~name** pour le champ de texte servant a récupérer un paramètre qui lui prendra comme nom un des argument du formulaire).
 
 Ensuite, on se sert de la fonction `post_form` pour créer le formulaire en lui donnant le service pointé, le formulaire et `unit`. Vous pouvez compiler votre application et vous verrez que la page d'accueil est munie d'un petit formulaire fonctionnel, pointant vers le service `post_bonjour`.
+
+#### D'autres types de services
+Dans la construction de cette petite application, un peu inutile, nous avons survolés quelques deux types de services. Sachez cependant qu'il en existe beaucoup d'autres, de même qu'il existe des *co-services*, permettant de ne représenter qu'une action. Ces autres types seront survolés dans la suite de cet article, lors de l'implémentation concrète de notre système de micro-blogging. Pour plus d'informations, n'hésitez pas à vous référer aux liens (et dans le contexte des services plus principalement au lien du manuel de Eliom) fournis en annexe.
+
+A ce stade-ci, nous avons survolé une manière de naviguer dans la page, mais il reste encore beaucoup de choses a survoler. En effet, nous ne pouvons pas encore réaliser grand chose de concret avec ce que nous avons survolé.
+
+### De la persistance
+Nous ne pourrions sérieusement pas penser implémenter notre plateforme de micro-blogging sans avoir appréhender la persistance de données de notre application. En général, la persistance de données est un point crucial du développement d'applications web. Pour notre exemple, j'utiliserai **PostGresSQL**, (l'installation de ce système ne sera pas évoqué ici car il existe beaucoup d'articles bien plus claires que ce que je pourrais écrire).
+
+Une fois de plus Ocsigen propose une solution étonnemment originale et fiable pour l'écriture de requête SQL. Pour ceux ayant déjà eu l'occasion de faire du PHP, sans framework, et pourquoi pas, avant la démocratisation de *PDO*, vous serez familier avec le fait d'écrire une requête SQL dans une chaine de caractères qui sera évaluée à l'exécution. Comme nous sommes des programmeurs OCaml, et que nous aimons les applications bien typées, ce genre de technique sauvage est à exclure, car on ne pourrait pas vérifier, *a la compilation* la cohérence de la requête. Une fois de plus Ocsigen propose une solution étonnemment originale et fiable face à l'écriture de requête, en effet, le framework est dôté d'une bibliothèque, MaCaQue (pour Macro CamL Queries), pour rédiger des requêtes SQL vérifée à la compilation.
+
+MaCaque permet de minimiser les erreurs à l'éxécution en vérifiant la bonne constitution d'une requête (en tirant partit des types fantômes). La bibliothèque est dôté d'une extension de syntaxe proposant une écriture proche de celle des compréhension.
+
+#### Inclure macaque dans son projet
+
+
+
+## Liens de références pour la rédaction de cet article
+
+Voici une tentative de construction de liste exhaustive des références que j'ai utilisées pour l'écriture de cet article.
+
+*  [Page officiel de Ocsigen](http://www.ocsigen.org)
+     *  [Petits tutoriels](http://www.ocsigen.org/tuto/manual/)
+     *  [Manuel de Eliom](http://www.ocsigen.org/eliom/manual/)
+	 *  [Manuel de Lwt](http://www.ocsigen.org/lwt/manual/)
+	 *  [Cheatsheet](http://ocsigen.org/overview/cheatsheet)
+*  [Dépôt de MACAQUE](https://github.com/ocsigen/macaque)
+*  [Dépôt de Cumulus](https://github.com/Cumulus/Cumulus)
+*  [Ocsigen : une bouffée d'air frais pour le web](http://progmod.eu/nouvelle/18/ocsigen-2-une-bouffee-dair-frais-pour-le-web)
+*  [Rethinking web interractions](http://www.pps.univ-paris-diderot.fr/~balat/publications/2014balat-rethinking2.pdf)
+*  [Ocsigen AT ICFP](http://www.pps.univ-paris-diderot.fr/~balat/publications/2009icfp-ocsigen.pdf)
+*  [Guide du programmeur Eliom](http://www.pps.univ-paris-diderot.fr/~balat/publications/2008-balat-eliom-1.1.0.pdf)
+
+

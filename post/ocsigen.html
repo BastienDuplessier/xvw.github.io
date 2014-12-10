@@ -632,6 +632,31 @@
     ]</code></pre>
 <p>Concrètement, les deux ajouts importants sont la fonction <code>form</code>, qui servira a générer le formulaire. Il s'agit d'une fonction prenant en argument le paramètre <strong>POST</strong> (en respectant la forme expliquée plus haut : <code>(a, (b, c))</code>. Cette fonction renvoie une liste de balise générée avec TyXML. On se sert des fonctions <code>string_input</code> (et de l'attribut <strong>~name</strong> pour le champ de texte servant a récupérer un paramètre qui lui prendra comme nom un des argument du formulaire).</p>
 <p>Ensuite, on se sert de la fonction <code>post_form</code> pour créer le formulaire en lui donnant le service pointé, le formulaire et <code>unit</code>. Vous pouvez compiler votre application et vous verrez que la page d'accueil est munie d'un petit formulaire fonctionnel, pointant vers le service <code>post_bonjour</code>.</p>
+<h4 id="dautres-types-de-services">D'autres types de services</h4>
+<p>Dans la construction de cette petite application, un peu inutile, nous avons survolés quelques deux types de services. Sachez cependant qu'il en existe beaucoup d'autres, de même qu'il existe des <em>co-services</em>, permettant de ne représenter qu'une action. Ces autres types seront survolés dans la suite de cet article, lors de l'implémentation concrète de notre système de micro-blogging. Pour plus d'informations, n'hésitez pas à vous référer aux liens (et dans le contexte des services plus principalement au lien du manuel de Eliom) fournis en annexe.</p>
+<p>A ce stade-ci, nous avons survolé une manière de naviguer dans la page, mais il reste encore beaucoup de choses a survoler. En effet, nous ne pouvons pas encore réaliser grand chose de concret avec ce que nous avons survolé.</p>
+<h3 id="de-la-persistance">De la persistance</h3>
+<p>Nous ne pourrions sérieusement pas penser implémenter notre plateforme de micro-blogging sans avoir appréhender la persistance de données de notre application. En général, la persistance de données est un point crucial du développement d'applications web. Pour notre exemple, j'utiliserai <strong>PostGresSQL</strong>, (l'installation de ce système ne sera pas évoqué ici car il existe beaucoup d'articles bien plus claires que ce que je pourrais écrire).</p>
+<p>Une fois de plus Ocsigen propose une solution étonnemment originale et fiable pour l'écriture de requête SQL. Pour ceux ayant déjà eu l'occasion de faire du PHP, sans framework, et pourquoi pas, avant la démocratisation de <em>PDO</em>, vous serez familier avec le fait d'écrire une requête SQL dans une chaine de caractères qui sera évaluée à l'exécution. Comme nous sommes des programmeurs OCaml, et que nous aimons les applications bien typées, ce genre de technique sauvage est à exclure, car on ne pourrait pas vérifier, <em>a la compilation</em> la cohérence de la requête. Une fois de plus Ocsigen propose une solution étonnemment originale et fiable face à l'écriture de requête, en effet, le framework est dôté d'une bibliothèque, MaCaQue (pour Macro CamL Queries), pour rédiger des requêtes SQL vérifée à la compilation.</p>
+<p>MaCaque permet de minimiser les erreurs à l'éxécution en vérifiant la bonne constitution d'une requête (en tirant partit des types fantômes). La bibliothèque est dôté d'une extension de syntaxe proposant une écriture proche de celle des compréhension.</p>
+<h4 id="inclure-macaque-dans-son-projet">Inclure macaque dans son projet</h4>
+<h2 id="liens-de-références-pour-la-rédaction-de-cet-article">Liens de références pour la rédaction de cet article</h2>
+<p>Voici une tentative de construction de liste exhaustive des références que j'ai utilisées pour l'écriture de cet article.</p>
+<ul>
+<li><a href="http://www.ocsigen.org">Page officiel de Ocsigen</a>
+<ul>
+<li><a href="http://www.ocsigen.org/tuto/manual/">Petits tutoriels</a></li>
+<li><a href="http://www.ocsigen.org/eliom/manual/">Manuel de Eliom</a></li>
+<li><a href="http://www.ocsigen.org/lwt/manual/">Manuel de Lwt</a></li>
+<li><a href="http://ocsigen.org/overview/cheatsheet">Cheatsheet</a></li>
+</ul></li>
+<li><a href="https://github.com/ocsigen/macaque">Dépôt de MACAQUE</a></li>
+<li><a href="https://github.com/Cumulus/Cumulus">Dépôt de Cumulus</a></li>
+<li><a href="http://progmod.eu/nouvelle/18/ocsigen-2-une-bouffee-dair-frais-pour-le-web">Ocsigen : une bouffée d'air frais pour le web</a></li>
+<li><a href="http://www.pps.univ-paris-diderot.fr/~balat/publications/2014balat-rethinking2.pdf">Rethinking web interractions</a></li>
+<li><a href="http://www.pps.univ-paris-diderot.fr/~balat/publications/2009icfp-ocsigen.pdf">Ocsigen AT ICFP</a></li>
+<li><a href="http://www.pps.univ-paris-diderot.fr/~balat/publications/2008-balat-eliom-1.1.0.pdf">Guide du programmeur Eliom</a></li>
+</ul>
 </div>
 <hr />
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
