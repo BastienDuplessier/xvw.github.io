@@ -980,8 +980,75 @@ Une fois de plus Ocsigen propose une solution étonnemment originale et fiable p
 MaCaque permet de minimiser les erreurs à l'éxécution en vérifiant la bonne constitution d'une requête (en tirant partit des types fantômes). La bibliothèque est dôté d'une extension de syntaxe proposant une écriture proche de celle des compréhension.
 
 #### Inclure macaque dans son projet
+Je vous propose de créer un projet pour l'application de micro-blogging, je l'ai nommée microblog (`eliom-distillery -name microblog`). Comme l'application Hello, nous organiserons nos fichiers d'une manière similaire, cependant, l'application étant plus riche, nous en aurons un peu plus.
 
+Grâce au fichier `Makefile.options`, ajouter Macaque à la liste des paqets est assez simple. Il suffit d'ajouter un `SERVER_PACKAGES`. Donc la ligne `SERVER_PACKAGES :=` devient :
+`SERVER_PACKAGES := macaque.syntax`. On ajoute l'extension de syntaxe de Macaque (et macaque).
 
+C'est dans le `Makefile.options` que l'on ajoute les paquets, séparés par un espace. Macaque ne concerne (à priori) que le serveur, on se contente donc de le placer dans la variable `SERVER_PACKAGES`. Nous pouvons maintenant utiliser Macaque dans notre projet !
+
+#### Principe général
+Macaque repose principalement sur une couche bas niveau de [PG'OCaml](http://pgocaml.forge.ocamlcore.org/), un des outils les plus standards pour la communication avec un serveur Postgres. Il est tout à fait possible de se servir de PG'OCaml pour écrire des requêtes dans un projet utilisant Macaque, ce qui pourra parfois être utile étant donnée que Macaque ne prend pas en charge toutes les fonctionnalités de Postgres. (Cependant, je ne pense pas que c'est dans ce didacticiel que nous nous en rendrons compte).
+
+Macaque, pour compiler correctement les requêtes (et les vérifier), doit avoir une connaissance du schéma de données des tables, c'est pour cela que je commence généralement par décrire les tables dans un fichiers spécifique (`tables.eliom`). \
+Ensuite, je développe chacune des interfaces pour les tables dans des fichiers séparés, par exemple, la gestion utilisateur dans un fichier `users.eliom`.
+
+#### Accès à la base de données concurrent
+Macaque sert à décrire des tables et des requêtes, mais la connexion est toujours prises en charge par PG'OCaml. Par défaut, l'accès à la base de données et bloquant, il n'est donc pas possible d'effectuer plusieurs connexions simultannées, ce qui n'est probablement pas dérangeant pour une application local, mais l'est un peu plus pour une application web, qui peut potentiellement être utilisé par plusieurs utilisateurs simultanément (ça dépend un peu de votre popularité).
+
+Pour pallier à ce "problème", on utilisera une version "spécialisée" de Macaque régie en interne par **Lwt**, la bibliothèque de traitement concurrent, permettant un accès non bloquant à la base de données. J'utilise un autre fichier, `db.eliom` qui contiendra toutes les fonctionnalités relatives à la base de données.
+
+PG'OCaml dispose d'un foncteur capable de créer les utilitaires nécéssaire à la mise à disposition des outils de communication avec la base de données, nous lui donnerons comme module un module préparé spécialement pour, permettant les accès concurrent à la base de données. Voici le code que j'utilise pour `db.eliom`, j'ai pris l'habitude de l'utiliser pour chacun de mes projets utilisant Ocsigen et Macaque :
+
+```ocaml
+(* Multi access *)
+module Lwt_thread = struct
+  include Lwt
+  include Lwt_chan
+end 
+module Lwt_PGOCaml = PGOCaml_generic.Make(Lwt_thread)
+module Lwt_Query = Query.Make_with_Db(Lwt_thread)(Lwt_PGOCaml)
+```
+
+#### Connexion et fonctions utilitaires
+Maintenant que nous avons créé les outils de manipulation de la base de données au moyen du foncteur `PGOCaml_generic`, nous allons créer la connexion et les outils pour effectueur des requêtes.
+
+> En PHP, et dans d'autres technologies, il est courant de définir des variables pour l'hôte, l'utilisateur, le mot de passe et la base de données, ce qui permet de n'avoir qu'un seul fichier à changer en cas de changement de serveur (ou de déploiement). Je me sers d'un fichier `config.eliom` dans lequel j'ajoute :
+
+```ocaml
+(* Configuration de la connexion SQL *) 
+module SQL = 
+  struct
+    let host = "localhost"
+    let user = "nuki_psql"
+    let pass = "MOT DE PASSE"
+    let bdd  = "microblog"
+  end
+```
+
+La connexion n'est pas très complexe, elle repose sur PG'OCaml et se limite à :
+
+```ocaml
+let connect () = 
+  Lwt_PGOCaml.connect 
+    ~host:Config.SQL.host
+    ~user:Config.SQL.user
+    ~password:Config.SQL.pass
+    ~database:Config.SQL.bdd
+    ()
+```
+
+Et un simple appel de `connect ()` suffira à connecter à la base de données. Cependant, la connexion à la base de données n'est pas spécialement une action que l'on voudrait effectuer "tout le temps". Et donc au lieu de se connecter "tout le temps", on aimerait garder une collection de connexion ouverte et de ne réutiliser les connexions ouvertes libre. Pour ça, il faut utiliser le module `Lwt_pool`, qui permettra de garder un `pool` de connexions ouvertes.
+
+Pour cela, on se servira des deux fonctions du module `Lwt_pool` :
+
+*   `create n ?check ?validate f` où :
+    *   `n` : Nombre de membres maximum de la collection
+    *   `check` : Est appelé si l'utilisation d'un élément de la collection a échoué (nous ne nous en servirons pas dans cet exemple)
+	*   `validate` : Valide un élément avant son utilisation, et le recrée si l'élément est invalide
+	*  `f` : la fonction utilisée pour créer un nouvel élément
+
+*   `use p f` : Prend un élément du pool `p`, et le passe en argument à la fonction `f`.
 
 ## Liens de références pour la rédaction de cet article
 

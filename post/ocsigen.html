@@ -640,6 +640,56 @@
 <p>Une fois de plus Ocsigen propose une solution étonnemment originale et fiable pour l'écriture de requête SQL. Pour ceux ayant déjà eu l'occasion de faire du PHP, sans framework, et pourquoi pas, avant la démocratisation de <em>PDO</em>, vous serez familier avec le fait d'écrire une requête SQL dans une chaine de caractères qui sera évaluée à l'exécution. Comme nous sommes des programmeurs OCaml, et que nous aimons les applications bien typées, ce genre de technique sauvage est à exclure, car on ne pourrait pas vérifier, <em>a la compilation</em> la cohérence de la requête. Une fois de plus Ocsigen propose une solution étonnemment originale et fiable face à l'écriture de requête, en effet, le framework est dôté d'une bibliothèque, MaCaQue (pour Macro CamL Queries), pour rédiger des requêtes SQL vérifée à la compilation.</p>
 <p>MaCaque permet de minimiser les erreurs à l'éxécution en vérifiant la bonne constitution d'une requête (en tirant partit des types fantômes). La bibliothèque est dôté d'une extension de syntaxe proposant une écriture proche de celle des compréhension.</p>
 <h4 id="inclure-macaque-dans-son-projet">Inclure macaque dans son projet</h4>
+<p>Je vous propose de créer un projet pour l'application de micro-blogging, je l'ai nommée microblog (<code>eliom-distillery -name microblog</code>). Comme l'application Hello, nous organiserons nos fichiers d'une manière similaire, cependant, l'application étant plus riche, nous en aurons un peu plus.</p>
+<p>Grâce au fichier <code>Makefile.options</code>, ajouter Macaque à la liste des paqets est assez simple. Il suffit d'ajouter un <code>SERVER_PACKAGES</code>. Donc la ligne <code>SERVER_PACKAGES :=</code> devient : <code>SERVER_PACKAGES := macaque.syntax</code>. On ajoute l'extension de syntaxe de Macaque (et macaque).</p>
+<p>C'est dans le <code>Makefile.options</code> que l'on ajoute les paquets, séparés par un espace. Macaque ne concerne (à priori) que le serveur, on se contente donc de le placer dans la variable <code>SERVER_PACKAGES</code>. Nous pouvons maintenant utiliser Macaque dans notre projet !</p>
+<h4 id="principe-général">Principe général</h4>
+<p>Macaque repose principalement sur une couche bas niveau de <a href="http://pgocaml.forge.ocamlcore.org/">PG'OCaml</a>, un des outils les plus standards pour la communication avec un serveur Postgres. Il est tout à fait possible de se servir de PG'OCaml pour écrire des requêtes dans un projet utilisant Macaque, ce qui pourra parfois être utile étant donnée que Macaque ne prend pas en charge toutes les fonctionnalités de Postgres. (Cependant, je ne pense pas que c'est dans ce didacticiel que nous nous en rendrons compte).</p>
+<p>Macaque, pour compiler correctement les requêtes (et les vérifier), doit avoir une connaissance du schéma de données des tables, c'est pour cela que je commence généralement par décrire les tables dans un fichiers spécifique (<code>tables.eliom</code>).<br />Ensuite, je développe chacune des interfaces pour les tables dans des fichiers séparés, par exemple, la gestion utilisateur dans un fichier <code>users.eliom</code>.</p>
+<h4 id="accès-à-la-base-de-données-concurrent">Accès à la base de données concurrent</h4>
+<p>Macaque sert à décrire des tables et des requêtes, mais la connexion est toujours prises en charge par PG'OCaml. Par défaut, l'accès à la base de données et bloquant, il n'est donc pas possible d'effectuer plusieurs connexions simultannées, ce qui n'est probablement pas dérangeant pour une application local, mais l'est un peu plus pour une application web, qui peut potentiellement être utilisé par plusieurs utilisateurs simultanément (ça dépend un peu de votre popularité).</p>
+<p>Pour pallier à ce &quot;problème&quot;, on utilisera une version &quot;spécialisée&quot; de Macaque régie en interne par <strong>Lwt</strong>, la bibliothèque de traitement concurrent, permettant un accès non bloquant à la base de données. J'utilise un autre fichier, <code>db.eliom</code> qui contiendra toutes les fonctionnalités relatives à la base de données.</p>
+<p>PG'OCaml dispose d'un foncteur capable de créer les utilitaires nécéssaire à la mise à disposition des outils de communication avec la base de données, nous lui donnerons comme module un module préparé spécialement pour, permettant les accès concurrent à la base de données. Voici le code que j'utilise pour <code>db.eliom</code>, j'ai pris l'habitude de l'utiliser pour chacun de mes projets utilisant Ocsigen et Macaque :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Multi access *)</span>
+<span class="ot">module</span> Lwt_thread = <span class="kw">struct</span>
+  <span class="ot">include</span> Lwt
+  <span class="ot">include</span> Lwt_chan
+<span class="kw">end</span> 
+<span class="ot">module</span> Lwt_PGOCaml = PGOCaml_generic<span class="kw">.</span><span class="dt">Make</span>(<span class="dt">Lwt_thread</span>)
+<span class="ot">module</span> Lwt_Query = Query<span class="kw">.</span><span class="dt">Make_with_Db</span>(<span class="dt">Lwt_thread</span>)(<span class="dt">Lwt_PGOCaml</span>)</code></pre>
+<h4 id="connexion-et-fonctions-utilitaires">Connexion et fonctions utilitaires</h4>
+<p>Maintenant que nous avons créé les outils de manipulation de la base de données au moyen du foncteur <code>PGOCaml_generic</code>, nous allons créer la connexion et les outils pour effectueur des requêtes.</p>
+<blockquote>
+<p>En PHP, et dans d'autres technologies, il est courant de définir des variables pour l'hôte, l'utilisateur, le mot de passe et la base de données, ce qui permet de n'avoir qu'un seul fichier à changer en cas de changement de serveur (ou de déploiement). Je me sers d'un fichier <code>config.eliom</code> dans lequel j'ajoute :</p>
+</blockquote>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Configuration de la connexion SQL *)</span> 
+<span class="ot">module</span> SQL = 
+  <span class="kw">struct</span>
+    <span class="kw">let</span> host = <span class="st">&quot;localhost&quot;</span>
+    <span class="kw">let</span> user = <span class="st">&quot;nuki_psql&quot;</span>
+    <span class="kw">let</span> pass = <span class="st">&quot;MOT DE PASSE&quot;</span>
+    <span class="kw">let</span> bdd  = <span class="st">&quot;microblog&quot;</span>
+  <span class="kw">end</span></code></pre>
+<p>La connexion n'est pas très complexe, elle repose sur PG'OCaml et se limite à :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> connect () = 
+  Lwt_PGOCaml<span class="kw">.</span>connect 
+    ~host:Config<span class="kw">.</span>SQL<span class="kw">.</span>host
+    ~user:Config<span class="kw">.</span>SQL<span class="kw">.</span>user
+    ~password:Config<span class="kw">.</span>SQL<span class="kw">.</span>pass
+    ~database:Config<span class="kw">.</span>SQL<span class="kw">.</span>bdd
+    ()</code></pre>
+<p>Et un simple appel de <code>connect ()</code> suffira à connecter à la base de données. Cependant, la connexion à la base de données n'est pas spécialement une action que l'on voudrait effectuer &quot;tout le temps&quot;. Et donc au lieu de se connecter &quot;tout le temps&quot;, on aimerait garder une collection de connexion ouverte et de ne réutiliser les connexions ouvertes libre. Pour ça, il faut utiliser le module <code>Lwt_pool</code>, qui permettra de garder un <code>pool</code> de connexions ouvertes.</p>
+<p>Pour cela, on se servira des deux fonctions du module <code>Lwt_pool</code> :</p>
+<ul>
+<li><code>create n ?check ?validate f</code> où :
+<ul>
+<li><code>n</code> : Nombre de membres maximum de la collection</li>
+<li><code>check</code> : Est appelé si l'utilisation d'un élément de la collection a échoué (nous ne nous en servirons pas dans cet exemple)</li>
+<li><code>validate</code> : Valide un élément avant son utilisation, et le recrée si l'élément est invalide</li>
+<li><code>f</code> : la fonction utilisée pour créer un nouvel élément</li>
+</ul></li>
+<li><code>use p f</code> : Prend un élément du pool <code>p</code>, et le passe en argument à la fonction <code>f</code>.</li>
+</ul>
 <h2 id="liens-de-références-pour-la-rédaction-de-cet-article">Liens de références pour la rédaction de cet article</h2>
 <p>Voici une tentative de construction de liste exhaustive des références que j'ai utilisées pour l'écriture de cet article.</p>
 <ul>
