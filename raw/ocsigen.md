@@ -1050,6 +1050,56 @@ Pour cela, on se servira des deux fonctions du module `Lwt_pool` :
 
 *   `use p f` : Prend un élément du pool `p`, et le passe en argument à la fonction `f`.
 
+Il faut spécifier le type de retour de la fonction `pool` pour éviter d'avoir une `value restriction`, ou alors l'emballer dans une fonction qui prend `unit`. La fonction `use` utilisant `pool` permet l'écriture de l'interface d'accès à une base de données. En règle général je me sers toujours de ce code qui ne demande pas de modifications (outre le fichier `config.eliom`) pour permettre l'accès rapide à une base de données :
+
+```ocaml
+
+(* Pool de connexion *)
+let pool  =
+  fun () -> (
+    Lwt_pool.create 
+      16 
+      ~validate:Lwt_PGOCaml.alive 
+      connect
+  )
+
+(* Utilisation d'une resource du pool *)
+let use f ?log x = 
+  Lwt_pool.use 
+    (pool ()) 
+    (fun db -> f db ?log  x)
+
+(* Interface d'accès à la base de données *)
+let view ?log x = 
+  use Lwt_Query.view ?log x
+
+let view_one ?log x = 
+  use Lwt_Query.view_one ?log x
+
+let view_opt ?log x = 
+  use Lwt_Query.view_opt ?log x
+
+let query ?log x = 
+  use Lwt_Query.query ?log x
+
+let value ?log x = 
+  use Lwt_Query.value ?log x
+
+let value_opt ?log x = 
+  use Lwt_Query.value_opt ?log x
+
+```
+
+L'argument `?log` permet de renvoyer la la requête sous forme de chaîne sur le channel de sortie, s'il est donné. C'est un outil pratique pour le déboguage.
+
+Les fonction suffixées par `_opt` renvoient une option contenant le potentiel résultat, plutôt qu'une liste. Les fonctions suffixées par `_one` ne renvoient qu'une seule valeur (ou une exception en cas de retour nul). La différence entre une vue et une valeur est que la vue est un résultat de requête classique alors que la valeur est un champ en particulier.
+
+Maintenant que nous avons tous les outils pour communiquer avec une base de données, nous allons pouvoir décrire formellement les tables que nous utiliserons dans notre application, pour que Macaque ait une connaissance du schéma de base de données et que les requêtes puissent être vérifiées.
+
+> A ce stade ci, je partirai du principe que la base de données a bien été créée et que les tables présentées dans la description du projet ont été installées. (De même que le fichier `config.eliom` est correctement remplà).
+
+#### Description des tables du projet
+
 ## Liens de références pour la rédaction de cet article
 
 Voici une tentative de construction de liste exhaustive des références que j'ai utilisées pour l'écriture de cet article.

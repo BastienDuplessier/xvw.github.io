@@ -690,6 +690,48 @@
 </ul></li>
 <li><code>use p f</code> : Prend un élément du pool <code>p</code>, et le passe en argument à la fonction <code>f</code>.</li>
 </ul>
+<p>Il faut spécifier le type de retour de la fonction <code>pool</code> pour éviter d'avoir une <code>value restriction</code>, ou alors l'emballer dans une fonction qui prend <code>unit</code>. La fonction <code>use</code> utilisant <code>pool</code> permet l'écriture de l'interface d'accès à une base de données. En règle général je me sers toujours de ce code qui ne demande pas de modifications (outre le fichier <code>config.eliom</code>) pour permettre l'accès rapide à une base de données :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">
+<span class="co">(* Pool de connexion *)</span>
+<span class="kw">let</span> pool  =
+  <span class="kw">fun</span> () -&gt; (
+    Lwt_pool<span class="kw">.</span>create 
+      <span class="dv">16</span> 
+      ~validate:Lwt_PGOCaml<span class="kw">.</span>alive 
+      connect
+  )
+
+<span class="co">(* Utilisation d&#39;une resource du pool *)</span>
+<span class="kw">let</span> use f ?log x = 
+  Lwt_pool<span class="kw">.</span>use 
+    (pool ()) 
+    (<span class="kw">fun</span> db -&gt; f db ?log  x)
+
+<span class="co">(* Interface d&#39;accès à la base de données *)</span>
+<span class="kw">let</span> view ?log x = 
+  use Lwt_Query<span class="kw">.</span>view ?log x
+
+<span class="kw">let</span> view_one ?log x = 
+  use Lwt_Query<span class="kw">.</span>view_one ?log x
+
+<span class="kw">let</span> view_opt ?log x = 
+  use Lwt_Query<span class="kw">.</span>view_opt ?log x
+
+<span class="kw">let</span> query ?log x = 
+  use Lwt_Query<span class="kw">.</span>query ?log x
+
+<span class="kw">let</span> value ?log x = 
+  use Lwt_Query<span class="kw">.</span>value ?log x
+
+<span class="kw">let</span> value_opt ?log x = 
+  use Lwt_Query<span class="kw">.</span>value_opt ?log x</code></pre>
+<p>L'argument <code>?log</code> permet de renvoyer la la requête sous forme de chaîne sur le channel de sortie, s'il est donné. C'est un outil pratique pour le déboguage.</p>
+<p>Les fonction suffixées par <code>_opt</code> renvoient une option contenant le potentiel résultat, plutôt qu'une liste. Les fonctions suffixées par <code>_one</code> ne renvoient qu'une seule valeur (ou une exception en cas de retour nul). La différence entre une vue et une valeur est que la vue est un résultat de requête classique alors que la valeur est un champ en particulier.</p>
+<p>Maintenant que nous avons tous les outils pour communiquer avec une base de données, nous allons pouvoir décrire formellement les tables que nous utiliserons dans notre application, pour que Macaque ait une connaissance du schéma de base de données et que les requêtes puissent être vérifiées.</p>
+<blockquote>
+<p>A ce stade ci, je partirai du principe que la base de données a bien été créée et que les tables présentées dans la description du projet ont été installées. (De même que le fichier <code>config.eliom</code> est correctement remplà).</p>
+</blockquote>
+<h4 id="description-des-tables-du-projet">Description des tables du projet</h4>
 <h2 id="liens-de-références-pour-la-rédaction-de-cet-article">Liens de références pour la rédaction de cet article</h2>
 <p>Voici une tentative de construction de liste exhaustive des références que j'ai utilisées pour l'écriture de cet article.</p>
 <ul>
