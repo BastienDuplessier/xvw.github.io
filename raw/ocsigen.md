@@ -1096,7 +1096,7 @@ Les fonction suffixées par `_opt` renvoient une option contenant le potentiel r
 
 Maintenant que nous avons tous les outils pour communiquer avec une base de données, nous allons pouvoir décrire formellement les tables que nous utiliserons dans notre application, pour que Macaque ait une connaissance du schéma de base de données et que les requêtes puissent être vérifiées.
 
-> A ce stade ci, je partirai du principe que la base de données a bien été créée et que les tables présentées dans la description du projet ont été installées. (De même que le fichier `config.eliom` est correctement remplà).
+> A ce stade ci, je partirai du principe que la base de données a bien été créée et que les tables présentées dans la description du projet ont été installées. (De même que le fichier `config.eliom` est correctement adpté à votre configuration).
 
 #### Description des tables du projet
 
