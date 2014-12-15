@@ -333,9 +333,9 @@
 ]</code></pre>
 <p>Les retours à la ligne ne sont absolument pas obligatoire, ce que l'on retient, c'est qu'une balise pouvant en contenir d'autres a cette sémantique : <code>balise [liste d'autres balises]</code> et qu'une balise &quot;unique&quot;, de cette forme <code>&lt;balise /&gt;</code> (soit <code>&lt;hr /&gt;</code> ou <code>&lt;br /&gt;</code> par exemple) respecte cette sémantique : <code>balise ()</code>.</p>
 <p>Un des avantage de passer par TyXML est de garantir que le HTML produit est correctement typé (selon le W3C) (essayons donc de mettre une <code>&lt;div&gt;</code> dans un <code>&lt;span&gt;</code> et le code ne compilera même pas !), mais aussi d'être généralement plus court à écrire.</p>
-<p>Il est évidemment possible d'enrichir les balises d'attributs, pour ça on utilise l'argument labelisé <code>~a</code>, qui attend une liste d'attributs. Par exemple une liste de classes, ou un identifiant. Par exemple :</p>
+<p>Il est évidemment possible d'enrichir les balises d'attributs, pour ça on utilise l'argument labelisé <code>~a</code>, qui attend une liste d'attributs. Par exemple une liste de classes, ou un identifiant :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml">div
-  ~a:[a_id <span class="st">&quot;identifiant&quot;</span>, a_class [<span class="st">&quot;rouge; vert&quot;</span>]]
+  ~a:[a_id <span class="st">&quot;identifiant&quot;</span>; a_class [<span class="st">&quot;rouge; vert&quot;</span>]]
   [
      span ~a:[a_id <span class="st">&quot;say_hello&quot;</span>] [pcdata <span class="st">&quot;Hello !&quot;</span>]
   ]</code></pre>

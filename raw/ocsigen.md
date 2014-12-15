@@ -553,11 +553,11 @@ Les retours à la ligne ne sont absolument pas obligatoire, ce que l'on retient,
 
 Un des avantage de passer par TyXML est de garantir que le HTML produit est correctement typé (selon le W3C) (essayons donc de mettre une `<div>` dans un `<span>` et le code ne compilera même pas !), mais aussi d'être généralement plus court à écrire.
 
-Il est évidemment possible d'enrichir les balises d'attributs, pour ça on utilise l'argument labelisé `~a`, qui attend une liste d'attributs. Par exemple une liste de classes, ou un identifiant. Par exemple :
+Il est évidemment possible d'enrichir les balises d'attributs, pour ça on utilise l'argument labelisé `~a`, qui attend une liste d'attributs. Par exemple une liste de classes, ou un identifiant :
 
 ```ocaml
 div
-  ~a:[a_id "identifiant", a_class ["rouge; vert"]]
+  ~a:[a_id "identifiant"; a_class ["rouge; vert"]]
   [
      span ~a:[a_id "say_hello"] [pcdata "Hello !"]
   ]
