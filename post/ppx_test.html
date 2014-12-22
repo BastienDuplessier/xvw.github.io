@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Un environnement réfutable pour les tests en OCaml</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../default.css">
+    <script src="../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="content">
+      <a href="../index.html">Retourner a l'index</a>
+      <hr id="top" name="top"/>
+      <div id="innercontent">
+<h1>Un environnement réfutable pour les tests en OCaml</h1>
+<blockquote>
+<p>Cet article présente l'usage d'une nouveauté dans OCaml 4.02 permettant une extension de syntaxe entre des quotations. Cette nouveauté à été l'occasion d'implémenter un petit outil pour favoriser la création de &quot;tests&quot; <em>inline</em>.</p>
+</blockquote>
+<blockquote>
+<p>Cet article ne présente pas <code>ppx</code> en règle général mais uniquement l'outil <code>ppx_test</code>.</p>
+</blockquote>
+<h2 id="avant-propos">Avant-propos</h2>
+<p>Lorsque j'ai eu l'occasion de contribuer à <a href="https://github.com/ocaml-batteries-team/batteries-included">Batteries</a>, mon principal apport aura été assez annecdotique. En effet, j'ai mis en oeuvre une série de tests pour réussir à extraire le module <a href="https://github.com/ocaml-batteries-team/batteries-included/blob/master/src/batSubstring.ml">Substring</a> de l'incubateur. La méthode de tests utilisée (QTest/ItemML, qui évalue des commentaires sous forme de tests s'ils sont préfixés par T) s'est révélée assez utile pour plusieurs raisons :</p>
+<ul>
+<li>Test en dessous de la fonction testée</li>
+<li>Plus digeste (de mon point de vue) que OUnit</li>
+</ul>
+<p>Mais à ces avantages s'ajoutent quelques désavantages (de mon point de vue, une fois de plus) :</p>
+<ul>
+<li>Perte de la colorisation syntaxique (facilement réfutable en écrivant le test avant de le commenter)</li>
+<li>Impossibilité de décrire &quot;facilement&quot; une variable locale.</li>
+<li>Obligation d'utiliser un &quot;\&quot; en fin de ligne pour créer un test sur plusieurs lignes.</li>
+</ul>
+<h4 id="utilisation-de--ppx">Utilisation de -ppx</h4>
+<p>Depuis sa version 4.02, OCaml possède un préprocesseur moins lourd que CamlP4 qui mimétise le mécanisme de quotation. L'idée de <code>ppx_test</code> est d'ajouter des portions de codes qui ne sont pas intèrprétée à la compilation. Sauf en cas d'usage de l'annotation <code>-ppx ppx_test</code>.</p>
+<h2 id="présentation">Présentation</h2>
+<p>Dans les grandes lignes, en utilisant <code>ppx_test</code>, des séquences de codes seront exécutées. Par exemple, le code :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">[@@@test_process
+  <span class="kw">let</span> x = <span class="dv">9</span>
+  <span class="kw">in</span> <span class="kw">assert</span>(x = <span class="dv">9</span>) 
+]</code></pre>
+<p>Sera ignoré à la compilation. Par contre, si le préprocesseur de test est utilisé, la portion présentée sera substituée par :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> _ =
+  <span class="kw">let</span> x = <span class="dv">9</span>
+  <span class="kw">in</span> <span class="kw">assert</span>(x = <span class="dv">9</span>)</code></pre>
+<p>A l'exécution de code compilé, le test sera donc exécuté.</p>
+<h3 id="test_process"><span class="citation">[@@@test_process ]</span></h3>
+<p>Cette annotation permet de définir une portion de code qui sera exécutable en cas de test. Il est donc possible d'utiliser n'importe quelle expression OCaml valide. Comme une ouverture, ou une inclusion.</p>
+<p>Par exemple :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">[@@@test_process <span class="ot">open</span> OUnit]</code></pre>
+<p>N'ouvrira le module OUnit qu'en cas de test.</p>
+<h3 id="test_register"><span class="citation">[@@@test_register ]</span></h3>
+<p>Il est aussi possible de convertir une portion de code en fonction qui sera sauvegardée dans une liste et utilisable par après. Par exemple :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Example of ppx_test usage*)</span>
+
+<span class="ot">module</span> Essay =
+<span class="kw">struct</span>
+  <span class="kw">let</span> succ x = x + <span class="dv">1</span>
+  <span class="kw">let</span> pred x = x - <span class="dv">1</span>
+  <span class="kw">let</span> is_null x = (x = <span class="dv">0</span>)
+  <span class="kw">let</span> divisible_by2 x = (x <span class="kw">mod</span> <span class="dv">2</span>) = <span class="dv">1</span>
+<span class="kw">end</span>
+
+[@@@test_register
+  <span class="kw">assert</span>((Essay<span class="kw">.</span>pred <span class="dv">9</span>) == <span class="dv">8</span>)
+]
+[@@@test_register
+  <span class="kw">assert</span>(Essay<span class="kw">.</span>is_null <span class="dv">0</span>);
+  <span class="kw">assert</span>(not (Essay<span class="kw">.</span>is_null <span class="dv">1</span>))
+]
+<span class="co">(* Test with value binding*)</span>
+[@@@test_register
+  <span class="kw">let</span> x = <span class="dv">9</span> <span class="kw">in</span>
+    <span class="kw">assert</span>((Essay<span class="kw">.</span>succ x) = <span class="dv">12</span>) <span class="co">(* this test fail *)</span>
+]
+
+<span class="co">(* Run all tests *)</span>
+[@@@test_process
+  execute_tests ()
+]</code></pre>
+<p>La primitive <code>execute_tests ()</code> va exécuter chacun des tests au moment de son appel.</p>
+<h3 id="mini_unit">Mini_unit</h3>
+<p>Mini_unit n'a pas d'autre intérêt que de présenter un usage de <code>ppx_test</code>. C'est une collection de fonctions d'assertions et en voici sa signature :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">module</span> Assert :
+<span class="kw">sig</span>
+  <span class="kw">val</span> count : <span class="dt">int</span> <span class="dt">ref</span>
+  <span class="kw">val</span> success_count : <span class="dt">int</span> <span class="dt">ref</span>
+  <span class="kw">val</span> output : <span class="dt">string</span> -&gt; <span class="dt">bool</span> -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> execute : ?name:<span class="dt">string</span> -&gt; <span class="dt">bool</span> -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> isTrue : ?name:<span class="dt">string</span> -&gt; <span class="dt">bool</span> -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> isFalse : ?name:<span class="dt">string</span> -&gt; <span class="dt">bool</span> -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> isEquals : ?name:<span class="dt">string</span> -&gt; &#39;a -&gt; &#39;a -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> isNotEquals : ?name:<span class="dt">string</span> -&gt; &#39;a -&gt; &#39;a -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> isSame : ?name:<span class="dt">string</span> -&gt; &#39;a -&gt; &#39;a -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> isNotSame : ?name:<span class="dt">string</span> -&gt; &#39;a -&gt; &#39;a -&gt; <span class="dt">unit</span>
+<span class="kw">end</span>
+<span class="kw">val</span> report : <span class="dt">unit</span> -&gt; <span class="dt">unit</span></code></pre>
+<p>Voici un exemple de son utilisation :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Small example with mini_unit usage *)</span>
+
+<span class="co">(* Open Mini_unit in test context*)</span>
+[@@@test_process <span class="ot">open</span> Mini_unit]
+
+<span class="kw">let</span> incr_list l = List<span class="kw">.</span>map (succ) l
+<span class="kw">let</span> decr_list l = List<span class="kw">.</span>map (pred) l
+<span class="kw">let</span> sum_list  l = List<span class="kw">.</span>fold_left ( + ) <span class="dv">0</span> l
+
+<span class="co">(* Test definition *)</span>
+[@@@test_register
+  <span class="kw">let</span> raw_list = [<span class="dv">1</span>;<span class="dv">2</span>;<span class="dv">3</span>] <span class="kw">in</span>
+  <span class="kw">let</span> out_list = incr_list raw_list
+  <span class="kw">in</span> Assert<span class="kw">.</span>isEquals
+    ~name:<span class="st">&quot;Test of incr_list&quot;</span>
+    out_list [<span class="dv">2</span>;<span class="dv">3</span>;<span class="dv">4</span>]
+]
+
+[@@@test_register
+  <span class="kw">let</span> li = [<span class="dv">1</span>;<span class="dv">2</span>;<span class="dv">3</span>]
+  <span class="kw">in</span> Assert<span class="kw">.</span>isEquals
+    ~name:<span class="st">&quot;Test of sum_list&quot;</span>
+    (sum_list li) <span class="dv">6</span>  
+]
+
+<span class="co">(* Test with failure !! *)</span>
+[@@@test_register
+  Assert<span class="kw">.</span>isTrue
+    ~name:<span class="st">&quot;Test with fail !!&quot;</span>
+    <span class="kw">false</span>
+]
+
+<span class="co">(* Test execution *)</span>
+[@@@test_process
+  <span class="kw">let</span> _ = execute_tests () <span class="kw">in</span> report ()
+]</code></pre>
+<p>La fonction <code>Mini_unit.report ()</code> affiche un compte rendu du jeu de test exécuté.</p>
+<h3 id="ppx_no_test">ppx_no_test</h3>
+<p>Dans le cas où les annotations non évaluée renverraient des warnings, le projet propose un autre préprocesseur qui éradique les annotations de tests. <code>ppx_no_test</code>.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>C'est un projet amusant pour s'initier aux -ppx's. Dans un futur très proche, je me concentrerai sur son utilisation avec OUnit en pensant, notamment, à une manière de nommer un test enregistrer, autrement qu'au moyen de la fonction d'assertion.</p>
+</div>
+<hr />
+<a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
+<hr />
+<h2>Commentaires</h2>
+<div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'nukifw'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+    </body>
+</html>
