@@ -28,7 +28,7 @@
 <span class="co">foo  1 ( * ) [4;5]   = 20</span>
 <span class="co">foo 12 ( + ) []      = 12</span>
 <span class="co">*)</span></code></pre>
-<p>Le principal avantage (de mon point de vue) est que les tests sont concis et que l'on peut vérifier facilement l'hexaustivité des tests. Cependant, pour la construction de tests multi-lignes, il faut impérativement terminer les lignes par un backslash et les commentaires ne préservent pas la colorisation syntaxique de notre editeur.</p>
+<p>Le principal avantage (de mon point de vue) est que les tests sont concis et que l'on peut vérifier facilement l'exhaustivité des tests. Cependant, pour la construction de tests multi-lignes, il faut impérativement terminer les lignes par un backslash et les commentaires ne préservent pas la colorisation syntaxique de notre editeur.</p>
 <p>Depuis OCaml 4.02, il existe un préprocesseur &quot;local&quot;, n'étant pas un constituant de CamlP4. Il propose deux type d'extensions. Les point d'extensions, qui génèrent une erreur s'ils ne sont pas évalués et les attributs, qui sont ignorés s'ils ne sont pas évalués.</p>
 <p>L'idée général de <code>ppx_test</code> est d'utiliser les attributs pour proposer un environnement réfutable de tests. Soit, lors d'une compilation sans l'utilisation du préprocesseur <code>ppx_test</code>, les tests sont ignorés, et l'utilisation du préprocesseur <code>ppx_test</code>, produit un exécutable ayant rendu les tests efficient.</p>
 <h2 id="code-exécuté-dans-le-contexte-des-tests">Code exécuté dans le contexte des tests</h2>
