@@ -18,7 +18,7 @@
 <p>Pendant très longtemps, j'ai été amené à concevoir des applications web. J'ai eu l'occasion d'expérimenter plusieurs technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et Yaws + Erlang). Je dois avouer n'avoir été que trop rarement satisfait par ces outils, principalement car depuis ma découverte des langages fonctionnels statiquement typés, j'ai réellement du mal à m'en passer. C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été véritablement emballé. Cependant, Ocsigen est, actuellement, pauvre en ressource et assez dépaysant (cette opinion n'est absolument pas à prendre comme un reproche mais plus comme une constatation et s'explique par l'innovation démontrée dans Ocsigen et sa jeunesse)), j'ai donc décidé de lui accorder un petit article proposant à sa fin, une implémentation pratique où chaque étape sera décrite !</p>
 </blockquote>
 <blockquote>
-<p>Un des prérequis de ce cours est une connaissance du langage OCaml (version 4.01.x)</p>
+<p>Un des prérequis de ce cours est une connaissance du langage OCaml (version 4.01.x). Si vous utilisez OCaml 4.02.x, une installation manuelle de Macaque sera nécéssaire : <code>opam install Macaque</code>.</p>
 </blockquote>
 <h2 id="présentation-sommaire-de-ocsigen">Présentation sommaire de Ocsigen</h2>
 <p><a href="http://www.ocsigen.org">Ocsigen</a> est une suite de logiciels libres écrite en OCaml, développée par le laboratoire français <a href="http://www.pps.univ-paris-diderot.fr/">PPS</a>. Son objectif principal réside dans la conception d’applications web fiables au moyen du langage de programmation <a href="http://www.ocaml.org">OCaml</a> qui est, en plus d’être extrêmement fiable, très expressif.<br />Ocsigen propose des réponses à des problèmatiques récurrentes du développement web, dans certains cas assez différentes des solutions proposées par d’autres technologies plus populaires.</p>
@@ -732,6 +732,35 @@
 <p>A ce stade ci, je partirai du principe que la base de données a bien été créée et que les tables présentées dans la description du projet ont été installées. (De même que le fichier <code>config.eliom</code> est correctement adpté à votre configuration).</p>
 </blockquote>
 <h4 id="description-des-tables-du-projet">Description des tables du projet</h4>
+<p>Pour que Macaque puisse vérifier la bonne sémantique (sur la forme et le typage) d'une requête, elle doit avoir une connaissance de la déscription des tables sur laquelle la requête agit. C'est pour ça que la première étape est la description formelle des tables.<br />Par soucis de modularité (une fois de plus), je décrirai mes tables dans un fichier externe, nommé <code>tables.ml</code>. Comme ce n'est pas un fichier <code>.eliom</code>, il faudra ajouter, dans le fichier <code>Makefile.options</code> l'extension <code>*.ml</code> (de cette manière : <code>SERVER_FILES := $(wildcard *.eliomi *.eliom *.ml)</code>). C'est indispensable car les fichiers eliom ne gèrent pas la syntaxe Macaque.</p>
+<p>Toutes mes tables seront décrites dans ce dernier. En plus des tables nous décrirons les séquences (ce qui nous permet de faire les successions d'indexes de notre application). Voici, par exemple, la description de la séquence des indexes des utilisateurs (qui a pour forme <code>CREATE SEQUENCE users_id_seq;</code> :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> users_id_seq = <span class="st">&lt;:sequence&lt; serial &quot;users_id_seq&quot; &gt;&gt;</span></code></pre>
+<p>L'usage des chevrons indique que l'on utilises les quotations de CamlP4. C'est grâce à une extension de syntaxe que Macaque est si expressif. Le passage de SQL à Macaque n'est pas très complexe, et nous pouvons, dans la volée, décrire la séquence des messages :</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> users_id_seq = <span class="st">&lt;:sequence&lt; serial &quot;users_id_seq&quot; &gt;&gt;</span>
+<span class="kw">let</span> messages_id_seq = <span class="st">&lt;:sequence&lt; serial &quot;messages_id_seq&quot; &gt;&gt;</span> </code></pre>
+<p>(Si nous avions utilisé des <code>Bigint</code>'s pour décrire les identifiants de nos messages et de nos utilisateurs, nous aurions dût utiliser <code>bigserial</code> à la place de <code>serial</code>.</p>
+<p>Comme pour les séquences, la création d'une table n'est pas beaucoup plus complexe. Elle respecte la même sémantique que l'expression de construction d'une séquence, voici un exemple pour la table <code>users</code>:</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> users =
+  <span class="st">&lt;:table&lt; users (</span>
+<span class="st">    user_id integer NOT NULL DEFAULT(nextval $users_id_seq$),</span>
+<span class="st">    nickname text NOT NULL,</span>
+<span class="st">    email text NOT NULL, </span>
+<span class="st">    password text NOT NULL</span>
+<span class="st">  ) &gt;&gt;</span></code></pre>
+<p>Concrètement, il n'y a pas grand changements avec du SQL normal, on retrouve généralement cette forme dans la description d'une table : <code>&lt;:table&lt; NOM_TABLE (STRUCTURE_TABLE) &gt;&gt;</code>. La seule petite différence provient sans doute du fait que la description ne connait pas la clée primaire et les clés secondaires et qu'il faut donc spécifier que <code>user_id</code> ne peut pas être null. Dans cet exemple, on utilise une fonction Macaque (<code>nextval</code>), pour établir l'identifiant. Nous verrons, quand nous nous pencherons sur les requêtes, comment prendre compte de cette annotation.</p>
+<blockquote>
+<p>En général, le code entre $ est du code échappé, provenant de l'extérieur. Nous nous servirons très souvent de cette échappe lors de la construction de requêtes (principalement pour l'insertion).</p>
+</blockquote>
+<p>Maintenant que la manière générique de construire une table a été décrite, on peut sans attendre, décrire la table message, pour laquelle il existe une nuance.</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> messages =
+  <span class="st">&lt;:table&lt; messages (</span>
+<span class="st">    message_id integer NOT NULL</span>
+<span class="st">           DEFAULT(nextval $messages_id_seq$),</span>
+<span class="st">    publication_date timestamptz NOT NULL,</span>
+<span class="st">    user_id integer NOT NULL,</span>
+<span class="st">    content text NOT NULL</span>
+<span class="st">  ) &gt;&gt;</span></code></pre>
+<p>J'utilise le type <code>timestamptz</code> pour tenir compte de la <code>timezone</code>.</p>
 <h2 id="liens-de-références-pour-la-rédaction-de-cet-article">Liens de références pour la rédaction de cet article</h2>
 <p>Voici une tentative de construction de liste exhaustive des références que j'ai utilisées pour l'écriture de cet article.</p>
 <ul>

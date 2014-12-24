@@ -22,7 +22,8 @@
 
 
 > Un des prérequis de ce cours est une connaissance du langage
-> OCaml (version 4.01.x)
+> OCaml (version 4.01.x). Si vous utilisez OCaml 4.02.x, une
+> installation manuelle de Macaque sera nécéssaire : `opam install Macaque`.
 
 ## Présentation sommaire de Ocsigen
 [Ocsigen](http://www.ocsigen.org) est une suite de logiciels
@@ -1099,6 +1100,51 @@ Maintenant que nous avons tous les outils pour communiquer avec une base de donn
 > A ce stade ci, je partirai du principe que la base de données a bien été créée et que les tables présentées dans la description du projet ont été installées. (De même que le fichier `config.eliom` est correctement adpté à votre configuration).
 
 #### Description des tables du projet
+Pour que Macaque puisse vérifier la bonne sémantique (sur la forme et le typage) d'une requête, elle doit avoir une connaissance de la déscription des tables sur laquelle la requête agit. C'est pour ça que la première étape est la description formelle des tables. \
+Par soucis de modularité (une fois de plus), je décrirai mes tables dans un fichier externe, nommé `tables.ml`. Comme ce n'est pas un fichier `.eliom`, il faudra ajouter, dans le fichier `Makefile.options` l'extension `*.ml` (de cette manière : `SERVER_FILES := $(wildcard *.eliomi *.eliom *.ml)`). C'est indispensable car les fichiers eliom ne gèrent pas la syntaxe Macaque.
+
+Toutes mes tables seront décrites dans ce dernier. En plus des tables nous décrirons les séquences (ce qui nous permet de faire les successions d'indexes de notre application). Voici, par exemple, la description de la séquence des indexes des utilisateurs (qui a pour forme `CREATE SEQUENCE users_id_seq; ` :
+```ocaml
+let users_id_seq = <:sequence< serial "users_id_seq" >>
+```
+L'usage des chevrons indique que l'on utilises les quotations de CamlP4. C'est grâce à une extension de syntaxe que Macaque est si expressif.
+Le passage de SQL à Macaque n'est pas très complexe, et nous pouvons, dans la volée, décrire la séquence des messages :
+
+```ocaml
+let users_id_seq = <:sequence< serial "users_id_seq" >>
+let messages_id_seq = <:sequence< serial "messages_id_seq" >> 
+```
+(Si nous avions utilisé des `Bigint`'s pour décrire les identifiants de nos messages et de nos utilisateurs, nous aurions dût utiliser `bigserial` à la place de `serial`.
+
+Comme pour les séquences, la création d'une table n'est pas beaucoup plus complexe. Elle respecte la même sémantique que l'expression de construction d'une séquence, voici un exemple pour la table `users`:
+
+```ocaml
+let users =
+  <:table< users (
+    user_id integer NOT NULL DEFAULT(nextval $users_id_seq$),
+    nickname text NOT NULL,
+    email text NOT NULL, 
+    password text NOT NULL
+  ) >>
+```
+Concrètement, il n'y a pas grand changements avec du SQL normal, on retrouve généralement cette forme dans la description d'une table : `<:table< NOM_TABLE (STRUCTURE_TABLE) >>`. La seule petite différence provient sans doute du fait que la description ne connait pas la clée primaire et les clés secondaires et qu'il faut donc spécifier que `user_id` ne peut pas être null. Dans cet exemple, on utilise une fonction Macaque (`nextval`), pour établir l'identifiant. Nous verrons, quand nous nous pencherons sur les requêtes, comment prendre compte de cette annotation.
+
+> En général, le code entre $ est du code échappé, provenant de l'extérieur. Nous nous servirons très souvent de cette échappe lors de la construction de requêtes (principalement pour l'insertion).
+
+Maintenant que la manière générique de construire une table a été décrite, on peut sans attendre, décrire la table message, pour laquelle il existe une nuance.
+
+```ocaml
+let messages =
+  <:table< messages (
+    message_id integer NOT NULL
+           DEFAULT(nextval $messages_id_seq$),
+    publication_date timestamptz NOT NULL,
+    user_id integer NOT NULL,
+    content text NOT NULL
+  ) >>
+```
+J'utilise le type `timestamptz` pour tenir compte de la `timezone`.
+
 
 ## Liens de références pour la rédaction de cet article
 

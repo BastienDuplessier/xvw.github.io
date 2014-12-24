@@ -12,7 +12,7 @@ p {
     text-align: justify;
 }
 
-#listarticle li{
+#listarticle > li{
     padding-bottom: 12px;
 }
 
