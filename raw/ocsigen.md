@@ -21,8 +21,11 @@
 > implémentation pratique où chaque étape sera décrite !
 
 
+> **Information sur cet article** \
+> Cet article utilise une structure fortemment séquentielle. Il est évident qu'il ne présente pas une base de documentation rigoureuse mais est plus à prendre comme un apprentissage en tâtonnant. J'espère qu'il pourra tout de même apporter quelques informations pour les gens qui, comme moi, auraient fait face à des difficultés pour se lancer dans Ocsigen.
+
 > Un des prérequis de ce cours est une connaissance du langage
-> OCaml (version 4.01.x). Si vous utilisez OCaml 4.02.x, une
+> OCaml (version 4.02.x). Si vous utilisez OCaml 4.02.x, une
 > installation manuelle de Macaque sera nécéssaire : `opam install Macaque`.
 
 ## Présentation sommaire de Ocsigen
@@ -974,7 +977,7 @@ Dans la construction de cette petite application, un peu inutile, nous avons sur
 A ce stade-ci, nous avons survolé une manière de naviguer dans la page, mais il reste encore beaucoup de choses a survoler. En effet, nous ne pouvons pas encore réaliser grand chose de concret avec ce que nous avons survolé.
 
 ### De la persistance
-Nous ne pourrions sérieusement pas penser implémenter notre plateforme de micro-blogging sans avoir appréhender la persistance de données de notre application. En général, la persistance de données est un point crucial du développement d'applications web. Pour notre exemple, j'utiliserai **PostGresSQL**, (l'installation de ce système ne sera pas évoqué ici car il existe beaucoup d'articles bien plus claires que ce que je pourrais écrire).
+Nous ne pourrions sérieusement pas penser implémenter notre plateforme de micro-blogging sans avoir appréhender la persistance de données de notre application. En général, la persistance de données est un point crucial du développement d'applications web. Pour notre exemple, j'utiliserai **PostgreSQL**, (l'installation de ce système ne sera pas évoqué ici car il existe beaucoup d'articles bien plus claires que ce que je pourrais écrire).
 
 Une fois de plus Ocsigen propose une solution étonnemment originale et fiable pour l'écriture de requête SQL. Pour ceux ayant déjà eu l'occasion de faire du PHP, sans framework, et pourquoi pas, avant la démocratisation de *PDO*, vous serez familier avec le fait d'écrire une requête SQL dans une chaine de caractères qui sera évaluée à l'exécution. Comme nous sommes des programmeurs OCaml, et que nous aimons les applications bien typées, ce genre de technique sauvage est à exclure, car on ne pourrait pas vérifier, *a la compilation* la cohérence de la requête. Une fois de plus Ocsigen propose une solution étonnemment originale et fiable face à l'écriture de requête, en effet, le framework est dôté d'une bibliothèque, MaCaQue (pour Macro CamL Queries), pour rédiger des requêtes SQL vérifée à la compilation.
 
@@ -1101,7 +1104,12 @@ Maintenant que nous avons tous les outils pour communiquer avec une base de donn
 
 #### Description des tables du projet
 Pour que Macaque puisse vérifier la bonne sémantique (sur la forme et le typage) d'une requête, elle doit avoir une connaissance de la déscription des tables sur laquelle la requête agit. C'est pour ça que la première étape est la description formelle des tables. \
-Par soucis de modularité (une fois de plus), je décrirai mes tables dans un fichier externe, nommé `tables.ml`. Comme ce n'est pas un fichier `.eliom`, il faudra ajouter, dans le fichier `Makefile.options` l'extension `*.ml` (de cette manière : `SERVER_FILES := $(wildcard *.eliomi *.eliom *.ml)`). C'est indispensable car les fichiers eliom ne gèrent pas la syntaxe Macaque.
+Par soucis de modularité (une fois de plus), je décrirai mes tables dans un fichier externe, nommé `tables.ml`.
+
+> **Là ou les extensions de syntaxes s'empoignèrent**\
+> Les plus observateurs remarqueront que cette fois, je n'utilise pas un fichier .eliom, mais un fichier .ml. C'est parce que l'extension de syntaxe de Macaque n'est pas prise en charge par les fichiers elioms, pour éviter des collisions.
+
+> Il faudra donc modifier le fichier `Makefile.options` pour lui dire de prendre en compte les fichiers .ml (à la ligne SERVER_FILE). On aura donc le réflexe d'utiliser, chaque fois que l'on se sert de l'extension de syntaxe de Macaque, un fichier .ml.
 
 Toutes mes tables seront décrites dans ce dernier. En plus des tables nous décrirons les séquences (ce qui nous permet de faire les successions d'indexes de notre application). Voici, par exemple, la description de la séquence des indexes des utilisateurs (qui a pour forme `CREATE SEQUENCE users_id_seq; ` :
 ```ocaml
@@ -1143,8 +1151,10 @@ let messages =
     content text NOT NULL
   ) >>
 ```
-J'utilise le type `timestamptz` pour tenir compte de la `timezone`.
+J'utilise le type `timestamptz` pour tenir compte de la `timezone`. Il aurait été possible (et conseillé) de mettre, pour la date de publication, une valeur par défaut, mais à moins d'utiliser la dernière version de Macaque, il faut spécifier le type de la table, (dans un mli par exemple) pour éviter d'avir des variables non généralisées (`'_a`). Pour le confort de l'exercice, j'ai choisi d'admettre qu'on sauvegardera la date de publication au moment de l'enregistrement.
 
+
+### Interlude sur OCaml-safepass
 
 ## Liens de références pour la rédaction de cet article
 
