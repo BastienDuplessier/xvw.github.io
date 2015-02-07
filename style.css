@@ -19,8 +19,12 @@ body{
     margin: auto;
 }
 
+#top {
+		margin-top: 100px;
+		visibility: hidden;
+}
+
 #innercontent{
-		margin-top: 80px;
     width: 100%; 
     margin-bottom: 64px;
 }
@@ -67,6 +71,13 @@ td{
 		text-align: right;
 		padding: 10px;
 		vertical-align: middle;
+}
+
+#rtitle a {
+		display: block;
+		color: white;
+		text-decoration: none;
+	
 }
 
 @media (max-width: 500px){
