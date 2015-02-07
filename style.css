@@ -1,3 +1,16 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+
 body{
     font-family: 'Domine', serif;
 }
@@ -7,8 +20,13 @@ body{
 }
 
 #innercontent{
+		margin-top: 80px;
     width: 100%; 
     margin-bottom: 64px;
+}
+
+#innercontent h1,h2,h3,h4,h5,h6 {
+		padding-top : 40px;
 }
 
 p {
@@ -26,4 +44,48 @@ table{
 td{
     padding: 4px; 
     border: 1px solid silver;
+}
+
+#htitle {
+		display: table;
+		padding-left: 15px;
+		position: fixed;
+		top: 0px;
+		left: 0px;
+		width: 100%;
+		background-color: #333;
+		color: #999;
+}
+
+#htitle h1 {
+		display: table-cell;
+		font-size: 130%;
+		vertical-align: middle;
+}
+
+#rtitle {
+		text-align: right;
+		padding: 10px;
+		vertical-align: middle;
+}
+
+@media (max-width: 500px){
+
+		#innercontent {
+				margin-top: 0px;
+		}
+		
+		#htitle {
+				position: relative;
+				background-color:white;
+				color: black;
+		}
+		#htitle h1 {
+				width: 100%;
+				text-align:center;
+				display: block;
+		}
+		#rtitle {
+				display: none;
+		}
 }

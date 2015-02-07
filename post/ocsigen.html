@@ -10,11 +10,13 @@
     <script>hljs.initHighlightingOnLoad();</script>
   </head>
   <body>
+		<div id="htitle">
+			<h1>Introduction naïve au développement d'applications web  avec Ocsigen</h1>
+			<div id="rtitle">
+			</div>
+		</div>
     <div id="content">
-      <a href="../index.html">Retourner a l'index</a>
-      <hr id="top" name="top"/>
       <div id="innercontent">
-<h1>Introduction naïve au développement d'applications web avec Ocsigen</h1>
 <blockquote>
 <p>Pendant très longtemps, j'ai été amené à concevoir des applications web. J'ai eu l'occasion d'expérimenter plusieurs technologies (PHP, Ruby on Rails, Django, Spring, ASP.NET et Yaws + Erlang). Je dois avouer n'avoir été que trop rarement satisfait par ces outils, principalement car depuis ma découverte des langages fonctionnels statiquement typés, j'ai réellement du mal à m'en passer. C'est pour cette raison qu'à l'annonce de Ocsigen, j'ai été véritablement emballé. Cependant, Ocsigen est, actuellement, pauvre en ressource et assez dépaysant (cette opinion n'est absolument pas à prendre comme un reproche mais plus comme une constatation et s'explique par l'innovation démontrée dans Ocsigen et sa jeunesse)), j'ai donc décidé de lui accorder un petit article proposant à sa fin, une implémentation pratique où chaque étape sera décrite !</p>
 </blockquote>
@@ -224,7 +226,7 @@
 <h3 id="le-hello-world">Le Hello World</h3>
 <p>Dans cette partie, nous allons tâcher de faire l'habituel <strong>Hello World</strong>, mais avec quelques variantes. En trichant, il serait très facile de ne faire que remplacer <code>h2 [pcdata &quot;Welcome from Eliom's distillery!&quot;];</code> par <code>h2 [pcdata &quot;Hello World&quot;];</code>, mais ce serait, non seulement tricher, et totalement inutile. Cette fois nous allons directement proposer une structure de fichiers et réaliser notre Hello World sur plusieurs modules. Je vous invite à construire, via <code>eliom-distillery</code> un nouveau projet baptisé <code>hello</code>.</p>
 <h4 id="proposition-dorganisation">Proposition d'organisation</h4>
-<p>Comme je l'ai évoqué dans l'introduction, cette structure est issue de mon propre raisonnement (mais tout de même *fortemment inspirée$ de ce que j'ai pu observer sur Github, pour les quelques projets, principalement <a href="http://cumulus.mirai.fr">Cumulus</a>, que j'ai trouvé). Donc si jamais des gurus de Ocsigen ont des commentaires à faire, qu'ils n'hésitent surtout pas ! Cet article est aussi un prétexte à ma progression !</p>
+<p>Comme je l'ai évoqué dans l'introduction, cette structure est issue de mon propre raisonnement (mais tout de même <em>fortemment inspirée</em> de ce que j'ai pu observer sur Github, pour les quelques projets, principalement <a href="http://cumulus.mirai.fr">Cumulus</a>, que j'ai trouvé). Donc si jamais des gurus de Ocsigen ont des commentaires à faire, qu'ils n'hésitent surtout pas ! Cet article est aussi un prétexte à ma progression !</p>
 <p>Donc pour éviter d'avoir des fichiers trop longs, dans le contexte de cette application Hello World, je propose d'organiser le tout de cette manière :</p>
 <ul>
 <li><code>services.eliom</code> : Le module où nous définirons tous nos services.</li>
@@ -495,14 +497,14 @@
     Pages<span class="kw">.</span>bonjour_nuki</code></pre>
 <p>Après le lancement de la commande <code>make test.byte</code>, on peut se rendre à l'adresse (sur le port 8000 dans mon cas, car j'ai modifié mon Makefile.options) : <a href="http://localhost:8000/bonjour/Nuki">http://localhost:8000/bonjour/Nuki</a> qui affichera &quot;Bonjour Nuki&quot;</p>
 <h4 id="utilisation-des-paramètres-get">Utilisation des paramètres GET</h4>
-<p>Notre service <code>bonjourNuki</code> est très mignon, mais franchement utile, nous aimerions un peu plus de généricité en proposant un service capable, via l'url, de désigner la personne à saluer. On peut le faire via les paramètres. Nous allons nous servir des variables <strong>GET</strong> pour passer un prénom en argument et le saluer. Pour cela, je propose un nouveau service <code>bonjour</code> qui aura une forme un peu différente du précédent. Premièrement, supprimons tout ce qui est relatif à notre service <code>bonjourNuki</code> et lançons nous (dans <code>services.eliom</code>) :</p>
+<p>Notre service <code>bonjourNuki</code> est très mignon, mais franchement peu utile, nous aimerions un peu plus de généricité en proposant un service capable, via l'url, de désigner la personne à saluer. On peut le faire via les paramètres. Nous allons nous servir des variables <strong>GET</strong> pour passer un prénom en argument et le saluer. Pour cela, je propose un nouveau service <code>bonjour</code> qui aura une forme un peu différente du précédent. Premièrement, supprimons tout ce qui est relatif à notre service <code>bonjourNuki</code> et lançons nous (dans <code>services.eliom</code>) :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Un service pour saluer *)</span>
 <span class="kw">let</span> bonjour = 
   App<span class="kw">.</span>service
     ~path:[:<span class="st">&quot;bonjour&quot;</span>]
     ~get_params:(<span class="dt">string</span> <span class="st">&quot;prenom&quot;</span>)
     ()</code></pre>
-<p>Au contraire des deux précédents services, nous lui adjoignont un paramètres <strong>GET</strong> de type string et dont le nom est <code>prenom</code>. L'existence de ce paramètre implique donc que le premier argument de la fonction qui retourne la page doit être une chaîne de caractère :</p>
+<p>Au contraire des deux précédents services, nous lui adjoignons un paramètres <strong>GET</strong> de type string et dont le nom est <code>prenom</code>. L'existence de ce paramètre implique donc que le premier argument de la fonction qui retourne la page doit être une chaîne de caractère :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service pour dire bonjour *)</span> 
 <span class="kw">let</span> bonjour prenom () = 
   std_page
@@ -595,7 +597,7 @@
     ~post_params:(<span class="dt">string</span> <span class="st">&quot;prenom&quot;</span>)
     ()</code></pre>
 <p>Au contraire d'un service <em>normal</em>, un service <strong>POST</strong> ne possède pas de <strong>~path</strong> et n'est donc pas <em>bookmarkable</em>. En effet, on n'y accède pas via une adresse mais via un formulaire. L'argument <strong>~fallback</strong> permet de rédiriger le service vers un autre service en cas d'erreur (de mauvais typage par exemple). Dans notre cas, on fera pointer le service vers le service par défaut.</p>
-<p>Nous pouvons implémenter la page, elle sera fortement semblable à la page du service <code>bonjour</code> sauf que l'argument sera au POST et non au GET :</p>
+<p>Nous pouvons implémenter la page, elle sera fortemment semblable à la page du service <code>bonjour</code> sauf que l'argument sera au POST et non au GET :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service pour dire bonjour via un post*)</span> 
 <span class="kw">let</span> post_bonjour () prenom = 
   std_page
@@ -608,7 +610,7 @@
   Hello_app<span class="kw">.</span>register
     ~service:Services<span class="kw">.</span>post_bonjour
     Pages<span class="kw">.</span>post_bonjour</code></pre>
-<p>Maintenant il faut construire un formulaire. Il serait possible de les créer manuellement, mais Ocsigen a prévu (une fois de plus) une manière d'automatiser la construction de formulaires. Pour créer un formulaire, on utilise la fonction <code>Html5.D.post_form</code>. Elle prend en argument un service (vers laquelle le formulaire doit pointer) et une fonction chargée de construire les formulaires. Par exemple, modifions le code de notre service <code>main</code> pour afficher un formulaire pointant vers notre services fraîchement créer :</p>
+<p>Maintenant il faut construire un formulaire. Il serait possible de les créer manuellement, mais Ocsigen a prévu (une fois de plus) une manière d'automatiser la construction de formulaires. Pour créer un formulaire, on utilise la fonction <code>Html5.D.post_form</code>. Elle prend en argument un service (vers laquelle le formulaire doit pointer) et une fonction chargée de construire les formulaires. Par exemple, modifions le code de notre service <code>main</code> pour afficher un formulaire pointant vers notre services fraîchement créé :</p>
 <pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="co">(* Service principal *)</span> 
 <span class="kw">let</span> main () () = 
   <span class="kw">let</span> form prenom =
@@ -639,6 +641,8 @@
 <h4 id="dautres-types-de-services">D'autres types de services</h4>
 <p>Dans la construction de cette petite application, un peu inutile, nous avons survolés quelques deux types de services. Sachez cependant qu'il en existe beaucoup d'autres, de même qu'il existe des <em>co-services</em>, permettant de ne représenter qu'une action. Ces autres types seront survolés dans la suite de cet article, lors de l'implémentation concrète de notre système de micro-blogging. Pour plus d'informations, n'hésitez pas à vous référer aux liens (et dans le contexte des services plus principalement au lien du manuel de Eliom) fournis en annexe.</p>
 <p>A ce stade-ci, nous avons survolé une manière de naviguer dans la page, mais il reste encore beaucoup de choses a survoler. En effet, nous ne pouvons pas encore réaliser grand chose de concret avec ce que nous avons survolé.</p>
+<h4 id="sur-limplémentation-du-micro-blog">Sur l'implémentation du Micro-blog</h4>
+<p>Je propose de respecter cette architecture de fichier, que nous enrichirons au fur et à mesure de notre implémentation.</p>
 <h3 id="de-la-persistance">De la persistance</h3>
 <p>Nous ne pourrions sérieusement pas penser implémenter notre plateforme de micro-blogging sans avoir appréhender la persistance de données de notre application. En général, la persistance de données est un point crucial du développement d'applications web. Pour notre exemple, j'utiliserai <strong>PostgreSQL</strong>, (l'installation de ce système ne sera pas évoqué ici car il existe beaucoup d'articles bien plus claires que ce que je pourrais écrire).</p>
 <p>Une fois de plus Ocsigen propose une solution étonnemment originale et fiable pour l'écriture de requête SQL. Pour ceux ayant déjà eu l'occasion de faire du PHP, sans framework, et pourquoi pas, avant la démocratisation de <em>PDO</em>, vous serez familier avec le fait d'écrire une requête SQL dans une chaine de caractères qui sera évaluée à l'exécution. Comme nous sommes des programmeurs OCaml, et que nous aimons les applications bien typées, ce genre de technique sauvage est à exclure, car on ne pourrait pas vérifier, <em>a la compilation</em> la cohérence de la requête. Une fois de plus Ocsigen propose une solution étonnemment originale et fiable face à l'écriture de requête, en effet, le framework est dôté d'une bibliothèque, MaCaQue (pour Macro CamL Queries), pour rédiger des requêtes SQL vérifée à la compilation.</p>
@@ -770,8 +774,12 @@
 <span class="st">    user_id integer NOT NULL,</span>
 <span class="st">    content text NOT NULL</span>
 <span class="st">  ) &gt;&gt;</span></code></pre>
-<p>J'utilise le type <code>timestamptz</code> pour tenir compte de la <code>timezone</code>. Il aurait été possible (et conseillé) de mettre, pour la date de publication, une valeur par défaut, mais à moins d'utiliser la dernière version de Macaque, il faut spécifier le type de la table, (dans un mli par exemple) pour éviter d'avir des variables non généralisées (<code>'_a</code>). Pour le confort de l'exercice, j'ai choisi d'admettre qu'on sauvegardera la date de publication au moment de l'enregistrement.</p>
+<p>J'utilise le type <code>timestamptz</code> pour tenir compte de la <code>timezone</code>. Il aurait été possible (et conseillé) de mettre, pour la date de publication, une valeur par défaut, mais à moins d'utiliser la dernière version de Macaque, il faut spécifier le type de la table, (dans un mli par exemple) pour éviter d'avoir des variables non généralisées (<code>'_a</code>). Pour le confort de l'exercice, j'ai choisi d'admettre qu'on sauvegardera la date de publication au moment de l'enregistrement.</p>
 <h3 id="interlude-sur-ocaml-safepass">Interlude sur OCaml-safepass</h3>
+<p>Quand on crée un espace membre, il est très courrant de ne <strong>jamais</strong> stocker les mots de passes de manière visible dans la base de données. En PHP, on se sert des fonctions <strong>md5</strong> ou <strong>sha1</strong>. Pour Ocsigen, j'ai pris l'habitude d'utiliser la bibliothèque <strong>safepass</strong>, que l'on peut installer au moyen de la commande <code>opam install safepass</code>. Cette bibliothèque propose des fonctions pour crypter les mots de passes (notamment). Une fois installée, il faut l'ajouter dans la liste des paquets &quot;serveurs&quot; à utiliser. Pour ça on ajoute, dans le <code>Makefile.options</code> le paquet <code>safepass</code>. La ligne correspondante ressemblera à ça : <code>SERVER_PACKAGES := macaque.syntax safepass</code></p>
+<p>A partir de ce moment, nous pouvons disposons d'une bibliothèque de cryptage de mot de passes. Nous nous en servirons lors de l'enregistrement d'un nouvel utilisateur, et lors de sa connexion.</p>
+<h3 id="inscription">Inscription</h3>
+<p>Nous avons à prioir assez de préparation pour implémenter l'inscription. Nous écrirons les fonctions &quot;relatives à la base de données&quot; dans un fichier <code>user.ml</code>.</p>
 <h2 id="liens-de-références-pour-la-rédaction-de-cet-article">Liens de références pour la rédaction de cet article</h2>
 <p>Voici une tentative de construction de liste exhaustive des références que j'ai utilisées pour l'écriture de cet article.</p>
 <ul>
@@ -782,11 +790,11 @@
 <li><a href="http://www.ocsigen.org/lwt/manual/">Manuel de Lwt</a></li>
 <li><a href="http://ocsigen.org/overview/cheatsheet">Cheatsheet</a></li>
 </ul></li>
-<li><a href="https://github.com/ocsigen/macaque">Dépôt de MACAQUE</a></li>
+<li><a href="https://github.com/ocsigen/macaque">Dépôt de Macaque</a></li>
 <li><a href="https://github.com/Cumulus/Cumulus">Dépôt de Cumulus</a></li>
 <li><a href="http://progmod.eu/nouvelle/18/ocsigen-2-une-bouffee-dair-frais-pour-le-web">Ocsigen : une bouffée d'air frais pour le web</a></li>
 <li><a href="http://www.pps.univ-paris-diderot.fr/~balat/publications/2014balat-rethinking2.pdf">Rethinking web interractions</a></li>
-<li><a href="http://www.pps.univ-paris-diderot.fr/~balat/publications/2009icfp-ocsigen.pdf">Ocsigen AT ICFP</a></li>
+<li><a href="http://www.pps.univ-paris-diderot.fr/~balat/publications/2009icfp-ocsigen.pdf">Ocsigen at ICFP</a></li>
 <li><a href="http://www.pps.univ-paris-diderot.fr/~balat/publications/2008-balat-eliom-1.1.0.pdf">Guide du programmeur Eliom</a></li>
 </ul>
 </div>
@@ -794,7 +802,7 @@
 <a href="#top">Remonter</a> | <a href="../index.html">Retourner à l'index</a>
 <hr />
 <h2>Commentaires</h2>
-<div id="disqus_thread"></div>
+  <div id="disqus_thread"></div>
     <script type="text/javascript">
         /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
         var disqus_shortname = 'nukifw'; // required: replace example with your forum shortname
@@ -805,8 +813,8 @@
             dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
             (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
         })();
-    </script>
-    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-    </div>
-    </body>
+    </script> <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+  <script src="../custom.js"></script>
+ </body>
 </html>

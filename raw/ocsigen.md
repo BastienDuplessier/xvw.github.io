@@ -410,7 +410,7 @@ Dans cette partie, nous allons tâcher de faire l'habituel **Hello World**, mais
 
 
 #### Proposition d'organisation
-Comme je l'ai évoqué dans l'introduction, cette structure est issue de mon propre raisonnement (mais tout de même *fortemment inspirée$ de ce que j'ai pu observer sur Github, pour les quelques projets, principalement [Cumulus](http://cumulus.mirai.fr), que j'ai trouvé). Donc si jamais des gurus de Ocsigen ont des commentaires à faire, qu'ils n'hésitent surtout pas ! Cet article est aussi un prétexte à ma progression !
+Comme je l'ai évoqué dans l'introduction, cette structure est issue de mon propre raisonnement (mais tout de même *fortemment inspirée* de ce que j'ai pu observer sur Github, pour les quelques projets, principalement [Cumulus](http://cumulus.mirai.fr), que j'ai trouvé). Donc si jamais des gurus de Ocsigen ont des commentaires à faire, qu'ils n'hésitent surtout pas ! Cet article est aussi un prétexte à ma progression !
 
 Donc pour éviter d'avoir des fichiers trop longs, dans le contexte de cette application Hello World, je propose d'organiser le tout de cette manière :
 
@@ -770,7 +770,7 @@ let _ =
 Après le lancement de la commande `make test.byte`, on peut se rendre à l'adresse (sur le port 8000 dans mon cas, car j'ai modifié mon Makefile.options) : [http://localhost:8000/bonjour/Nuki](http://localhost:8000/bonjour/Nuki) qui affichera "Bonjour Nuki"
 
 #### Utilisation des paramètres GET
-Notre service `bonjourNuki` est très mignon, mais franchement utile, nous aimerions un peu plus de généricité en proposant un service capable, via l'url, de désigner la personne à saluer. On peut le faire via les paramètres. Nous allons nous servir des variables **GET** pour passer un prénom en argument et le saluer. Pour cela, je propose un nouveau service `bonjour` qui aura une forme un peu différente du précédent. Premièrement, supprimons tout ce qui est relatif à notre service `bonjourNuki` et lançons nous (dans `services.eliom`) :
+Notre service `bonjourNuki` est très mignon, mais franchement peu utile, nous aimerions un peu plus de généricité en proposant un service capable, via l'url, de désigner la personne à saluer. On peut le faire via les paramètres. Nous allons nous servir des variables **GET** pour passer un prénom en argument et le saluer. Pour cela, je propose un nouveau service `bonjour` qui aura une forme un peu différente du précédent. Premièrement, supprimons tout ce qui est relatif à notre service `bonjourNuki` et lançons nous (dans `services.eliom`) :
 
 ```ocaml
 (* Un service pour saluer *)
@@ -781,7 +781,7 @@ let bonjour =
     ()
 ```
 
-Au contraire des deux précédents services, nous lui adjoignont un paramètres **GET** de type string et dont le nom est `prenom`. L'existence de ce paramètre implique donc que le premier argument de la fonction qui retourne la page doit être une chaîne de caractère :
+Au contraire des deux précédents services, nous lui adjoignons un paramètres **GET** de type string et dont le nom est `prenom`. L'existence de ce paramètre implique donc que le premier argument de la fonction qui retourne la page doit être une chaîne de caractère :
 
 ```ocaml
 (* Service pour dire bonjour *) 
@@ -916,7 +916,7 @@ let post_bonjour =
 ```
 Au contraire d'un service *normal*, un service **POST** ne possède pas de **~path** et n'est donc pas *bookmarkable*. En effet, on n'y accède pas via une adresse mais via un formulaire. L'argument **~fallback** permet de rédiriger le service vers un autre service en cas d'erreur (de mauvais typage par exemple). Dans notre cas, on fera pointer le service vers le service par défaut.
 
-Nous pouvons implémenter la page, elle sera fortement semblable à la page du service `bonjour` sauf que l'argument sera au POST et non au GET :
+Nous pouvons implémenter la page, elle sera fortemment semblable à la page du service `bonjour` sauf que l'argument sera au POST et non au GET :
 
 ```ocaml
 (* Service pour dire bonjour via un post*) 
@@ -938,7 +938,7 @@ let _ =
 ```
 
 Maintenant il faut construire un formulaire. Il serait possible de les créer manuellement, mais Ocsigen a prévu (une fois de plus) une manière d'automatiser la construction de formulaires.
-Pour créer un formulaire, on utilise la fonction `Html5.D.post_form`. Elle prend en argument un service (vers laquelle le formulaire doit pointer) et une fonction chargée de construire les formulaires. Par exemple, modifions le code de notre service `main` pour afficher un formulaire pointant vers notre services fraîchement créer :
+Pour créer un formulaire, on utilise la fonction `Html5.D.post_form`. Elle prend en argument un service (vers laquelle le formulaire doit pointer) et une fonction chargée de construire les formulaires. Par exemple, modifions le code de notre service `main` pour afficher un formulaire pointant vers notre services fraîchement créé :
 
 ```ocaml
 (* Service principal *) 
@@ -975,6 +975,9 @@ Ensuite, on se sert de la fonction `post_form` pour créer le formulaire en lui 
 Dans la construction de cette petite application, un peu inutile, nous avons survolés quelques deux types de services. Sachez cependant qu'il en existe beaucoup d'autres, de même qu'il existe des *co-services*, permettant de ne représenter qu'une action. Ces autres types seront survolés dans la suite de cet article, lors de l'implémentation concrète de notre système de micro-blogging. Pour plus d'informations, n'hésitez pas à vous référer aux liens (et dans le contexte des services plus principalement au lien du manuel de Eliom) fournis en annexe.
 
 A ce stade-ci, nous avons survolé une manière de naviguer dans la page, mais il reste encore beaucoup de choses a survoler. En effet, nous ne pouvons pas encore réaliser grand chose de concret avec ce que nous avons survolé.
+
+#### Sur l'implémentation du Micro-blog
+Je propose de respecter cette architecture de fichier, que nous enrichirons au fur et à mesure de notre implémentation. 
 
 ### De la persistance
 Nous ne pourrions sérieusement pas penser implémenter notre plateforme de micro-blogging sans avoir appréhender la persistance de données de notre application. En général, la persistance de données est un point crucial du développement d'applications web. Pour notre exemple, j'utiliserai **PostgreSQL**, (l'installation de ce système ne sera pas évoqué ici car il existe beaucoup d'articles bien plus claires que ce que je pourrais écrire).
@@ -1151,10 +1154,16 @@ let messages =
     content text NOT NULL
   ) >>
 ```
-J'utilise le type `timestamptz` pour tenir compte de la `timezone`. Il aurait été possible (et conseillé) de mettre, pour la date de publication, une valeur par défaut, mais à moins d'utiliser la dernière version de Macaque, il faut spécifier le type de la table, (dans un mli par exemple) pour éviter d'avir des variables non généralisées (`'_a`). Pour le confort de l'exercice, j'ai choisi d'admettre qu'on sauvegardera la date de publication au moment de l'enregistrement.
+J'utilise le type `timestamptz` pour tenir compte de la `timezone`. Il aurait été possible (et conseillé) de mettre, pour la date de publication, une valeur par défaut, mais à moins d'utiliser la dernière version de Macaque, il faut spécifier le type de la table, (dans un mli par exemple) pour éviter d'avoir des variables non généralisées (`'_a`). Pour le confort de l'exercice, j'ai choisi d'admettre qu'on sauvegardera la date de publication au moment de l'enregistrement.
 
 
 ### Interlude sur OCaml-safepass
+Quand on crée un espace membre, il est très courrant de ne **jamais** stocker les mots de passes de manière visible dans la base de données. En PHP, on se sert des fonctions **md5** ou **sha1**. Pour Ocsigen, j'ai pris l'habitude d'utiliser la bibliothèque **safepass**, que l'on peut installer au moyen de la commande `opam install safepass`. Cette bibliothèque propose des fonctions pour crypter les mots de passes (notamment). Une fois installée, il faut l'ajouter dans la liste des paquets "serveurs" à utiliser. Pour ça on ajoute, dans le `Makefile.options` le paquet `safepass`. La ligne correspondante ressemblera à ça : `SERVER_PACKAGES := macaque.syntax safepass`
+
+A partir de ce moment, nous pouvons disposons d'une bibliothèque de cryptage de mot de passes. Nous nous en servirons lors de l'enregistrement d'un nouvel utilisateur, et lors de sa connexion.
+
+### Inscription
+Nous avons à prioir assez de préparation pour implémenter l'inscription. Nous écrirons les fonctions "relatives à la base de données" dans un fichier `user.ml`. 
 
 ## Liens de références pour la rédaction de cet article
 
@@ -1165,11 +1174,11 @@ Voici une tentative de construction de liste exhaustive des références que j'a
      *  [Manuel de Eliom](http://www.ocsigen.org/eliom/manual/)
 	 *  [Manuel de Lwt](http://www.ocsigen.org/lwt/manual/)
 	 *  [Cheatsheet](http://ocsigen.org/overview/cheatsheet)
-*  [Dépôt de MACAQUE](https://github.com/ocsigen/macaque)
+*  [Dépôt de Macaque](https://github.com/ocsigen/macaque)
 *  [Dépôt de Cumulus](https://github.com/Cumulus/Cumulus)
 *  [Ocsigen : une bouffée d'air frais pour le web](http://progmod.eu/nouvelle/18/ocsigen-2-une-bouffee-dair-frais-pour-le-web)
 *  [Rethinking web interractions](http://www.pps.univ-paris-diderot.fr/~balat/publications/2014balat-rethinking2.pdf)
-*  [Ocsigen AT ICFP](http://www.pps.univ-paris-diderot.fr/~balat/publications/2009icfp-ocsigen.pdf)
+*  [Ocsigen at ICFP](http://www.pps.univ-paris-diderot.fr/~balat/publications/2009icfp-ocsigen.pdf)
 *  [Guide du programmeur Eliom](http://www.pps.univ-paris-diderot.fr/~balat/publications/2008-balat-eliom-1.1.0.pdf)
 
 

@@ -26,7 +26,7 @@ pdf: $(PDFS)
 	@$(eval TITLE :=  $(shell sed -n '0,/^\%/p' $< | sed -re 's/^\% *//'))
 	@touch $(POST)/$@
 	@sed -re "s/\{\{TITLE\}\}/$(TITLE)/" $(SRC)/header.html > $(POST)/$@
-	@echo "<h1>"$(TITLE)"</h1>" >> $(POST)/$@
+	@# @echo "<h1>"$(TITLE)"</h1>" >> $(POST)/$@
 	@pandoc --webtex $< >> $(POST)/$@
 	@cat $(SRC)/footer.html >> $(POST)/$@
 	@echo $(POST)/$@ : [$(TITLE)] created
