@@ -2,6 +2,8 @@
 exception Malformed_document
 exception Malformed_list
 
+let url = "http://xvw.github.io"
+            
 let extract_block tag expr =
 	let open Str in 
 	let re_begin = regexp ("<"^tag^">\\(.*\\)")
@@ -70,6 +72,31 @@ struct
 			)
 		|> Unix.mktime
 		|> fst
+
+  let to_rss2 date =
+    let open Unix in 
+    let t = gmtime date
+    and month i =
+      [|
+        "Jan"; "Feb"; "Mar"; "Apr";
+        "May"; "Jun"; "Jul"; "Aug";
+        "Sep"; "Oct"; "Nov"; "Dec";
+       |].(i)
+    and day i =
+      [|
+        "Sun"; "Mon"; "Tue"; "Wed"; "Thu";
+        "Fri"; "Sat"
+      |].(i)
+    in
+    Printf.sprintf
+      "%s, %02d %s %04d %02d:%02d:%02d GMT"
+      (day t.tm_wday)
+      (t.tm_mday + 1)
+      (month t.tm_mon)
+      (t.tm_year)
+      (t.tm_hour)
+      (t.tm_min)
+      (t.tm_sec)
 
 end
 	
@@ -233,9 +260,40 @@ let entry_to_string e =
 	^ "</ul>"
 	^ "</div>"
 
+(* Erf, this is really ugly :'( *)
+let generate_rss entries =
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+  ^"<rss version=\"2.0\"><channel>"
+  ^"<title>Xavier Van de Woestyne, Page personnelle</title>"
+  ^"<description>Page personnelle de moi :v</description>"
+  ^"<lastBuildDate>"^(Date.to_rss2 (Unix.time ()))^"</lastBuildDate>"
+  ^"<link>"^url^"</link>"
+  ^ (
+    List.fold_left
+      (fun a x ->
+       let desc = match x.desc with
+         | Some x -> x | None -> "Pas de description"
+       and link = match x.file with
+         | Some x -> url ^ "/post/" ^ (File.basename x) ^ ".html"
+         | None -> url ^ "/list.html" in                         
+       let sub =
+         "<item>"
+         ^"<title>"^x.title^"</title>"
+         ^"<description>"^desc^"</description>"
+         ^"<pubDate>"^Date.to_rss2 x.date^"</pubDate>"
+         ^"<link>"^link^"</link>"
+         ^"</item>" in a ^ sub
+      ) "" entries
+  )
+  ^"</channel></rss>"
+  |> File.write "feed.xml";
+  print_endline "blogengine.byte : RSS Generated !"
+
 let () =
-	entries "raw"
+	let e  = entries "raw" in
+  let _ = generate_rss e in
+  e
 	|> List.map entry_to_string
 	|> List.fold_left (fun a x -> a^x) ""
 	|> File.write "raw_list.html" 
-	
+	              
