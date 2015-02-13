@@ -11,6 +11,19 @@
 #content {
 		max-width: 640px;
 		margin: auto;
+    margin-bottom: 100px;
+}
+
+.section-title {
+    margin: 0px;
+    margin-top: 32px;
+    margin-bottom: 28px;
+}
+
+.section-title-mini {
+    margin: 0px;
+    margin-top: 20px;
+    margin-bottom: 12px;
 }
 
 #header {
@@ -86,7 +99,7 @@
 
 .a_article > p {
 		font-size: 0.8em;
-		padding-left: 32px;
+		padding-left: 2em;
 		font-family: 'Droid Sans', sans-serif;
 }
 

@@ -22,7 +22,7 @@ let minimize expr =
 	|> Regexp.replace " *\\({\\|:\\)" "\\1"
 	|> Regexp.purge "\t"
 
-			 
+
 let purge_comments = Regexp.purge ".*/\\*(.+)\\*/.*"
 
 let minimize_file f =
@@ -39,7 +39,7 @@ let usage = "postprocess.byte [-o output] fileA fileB fileC"
 let anon : (string list) ref = ref []
 let anon_fun x =  anon := x::(!anon)
 let out = ref "css/app.min.css"
-									
+
 let () =
 	let _ =
 		Arg.parse

@@ -216,16 +216,16 @@ let entry_to_string e =
 		| None -> ""
 		| Some d -> d
 	in
-	let links = match e.file with
-		| None -> e.links
+	let (target, links) = match e.file with
+		| None -> ("#Il-n-y-a-rien-de-clickable-aha!", e.links)
 		| Some x ->
 			 let base = File.basename x in 
-			 (("Lire", "post/"^base^".html") ::
-					("Lire en PDF", "pdf/"^base^".pdf") :: e.links)
+			 ("post/"^base^".html", (("Lire", "post/"^base^".html") ::
+					("Lire en PDF", "pdf/"^base^".pdf") :: e.links))
 	in 
 	"<div class='a_article'>"
 	^ "<span class='a_date'>" ^ (Date.to_string e.date) ^ "</span>"
-	^ "<span class='a_title'>" ^ title ^ "</span>"
+	^ "<a class='a_title' href='"^target^"'>" ^ title ^ "</a>"
 	^ desc
 	^ "<ul class='enum-links'>"
 	^ List.fold_left

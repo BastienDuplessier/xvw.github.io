@@ -7,7 +7,7 @@ let split pattern =
 (* replace all occurence of pattern with form in s*)
 let replace pattern form  =
 	Str.global_replace (Str.regexp pattern) form
-
+                     
 (* erase all occurence of pattern *)
 let purge pattern = replace pattern ""
 
