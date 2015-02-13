@@ -11,17 +11,17 @@
  #================================================
  # Configuration
  #================================================
- SRC				= src
- BYTES			= bytes
- PDF				= pdf
- POST				= post
- CSS				= css
- JS					= js
- TPL				= tpl
- RAW				= raw
- BLOGR			= $(RAW)/articles
- GIT				= master
- CSSFiles		= $(CSS)/common.css $(CSS)/template.css
+ SRC = src
+ BYTES = bytes
+ PDF = pdf
+ POST	= post
+ CSS = css
+ JS	= js
+ TPL = tpl
+ RAW = raw
+ BLOGR = $(RAW)/articles
+ GIT = master
+ CSSFiles	= $(CSS)/common.css $(CSS)/template.css
 
 
  #================================================
