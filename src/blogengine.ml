@@ -233,6 +233,9 @@ let entry_to_string e =
 	^ "</ul>"
 	^ "</div>"
 
+let generate_rss entries =
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+
 let () =
 	entries "raw"
 	|> List.map entry_to_string
