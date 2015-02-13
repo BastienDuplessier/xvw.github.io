@@ -34,7 +34,7 @@ ocamlc = @ocamlc -I $(SRC)
 # PHONY Rules
 #================================================
 .PHONY: initialize clean all
-all : push list
+all : list push
 
 #================================================
 # Initialize
