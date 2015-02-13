@@ -260,6 +260,7 @@ let entry_to_string e =
 	^ "</ul>"
 	^ "</div>"
 
+(* Erf, this is really ugly :'( *)
 let generate_rss entries =
   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
   ^"<rss version=\"2.0\"><channel>"
