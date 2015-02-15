@@ -89,7 +89,7 @@ struct
       |].(i)
     in
     Printf.sprintf
-      "%s, %02d %s %04d %02d:%02d:%02d +0200"
+      "%s, %02d %s %04d %02d:%02d:%02d +0100"
       (day t.tm_wday)
       (t.tm_mday)
       (month t.tm_mon)
