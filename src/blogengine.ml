@@ -91,7 +91,7 @@ struct
     Printf.sprintf
       "%s, %02d %s %04d %02d:%02d:%02d GMT"
       (day t.tm_wday)
-      (t.tm_mday + 1)
+      (t.tm_mday)
       (month t.tm_mon)
       (t.tm_year + 1900)
       (t.tm_hour)
