@@ -93,7 +93,7 @@ struct
       (day t.tm_wday)
       (t.tm_mday + 1)
       (month t.tm_mon)
-      (t.tm_year)
+      (t.tm_year + 1900)
       (t.tm_hour)
       (t.tm_min)
       (t.tm_sec)
