@@ -19,41 +19,40 @@ let run f = (wait_page ()) >>= (fun () -> Lwt.return (f ()))
 let display e t =
   List.iter (fun elt -> elt ## style ## display <- (string t)) e
   
-let seek e =
-  let elt =
-    e 
-    |> CoerceTo.input
-    |> unopt
-  in
+let seek elt =
   let kwd =
     let open Regexp in 
     let k = 
       to_string (elt ## value)
       |> split (regexp "\\s|\\+|;|,")
       |> List.fold_left (fun a x -> a^",.keyword_"^x) "" in
-    string String.(sub k 1 ((length k)-1))
+    String.(sub k 1 ((length k)-1))
 
   in
+  let _ =
+    let k = to_string (elt ## value) in 
+    if (k = "" || k = " " || String.length k = 0) then
+      (elt ## style ## color <- (string "#000000"))
+  in 
   let all =
     (document ## querySelectorAll (string ".a_article"))
     |> Dom.list_of_nodeList
   in
   let candidates =
-    (document ## querySelectorAll (kwd))
+    (document ## querySelectorAll (string kwd))
     |> Dom.list_of_nodeList
   in
   match candidates with
-  | [] -> display all "block"
+  | [] ->
+     display all "block"
   | x ->
-     begin
-       display all "none";
-       display x "block"
-     end
+     display all "none";
+     display x "block"
        
   
 let state () =
-  let searchbar = (retreive "search-bar") in
-  searchbar ## onkeyup <-
-    Dom.handler (fun _ -> seek searchbar; _true)
+  let searchbar = ((CoerceTo.input (retreive "search-bar") |> unopt)) in
+  searchbar ## onkeyup <- Dom.handler (fun _ -> seek searchbar; _true)
+  (* searchbar ## onblur <- Dom.handler (fun _ -> seek searchbar; _true) *)
 let _ = run state
   
