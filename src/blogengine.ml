@@ -126,10 +126,12 @@ struct
 		match extract_block "keywords" e with
 		| None -> []
 		| Some x ->
-			Regexp.minimize x
-			|> String.lowercase
-			|> Regexp.replace " " ""
-			|> Regexp.split ","
+			 let res =
+         Regexp.minimize x
+			   |> String.lowercase
+			   |> Regexp.replace " " ""
+			   |> Regexp.split ","
+       in res
 
 	let links e =
 		match extract_block "links" e with
@@ -158,10 +160,21 @@ type entry = {
 	links : (string * string) list;
 }
 
-let create_html_file t s md base =
+let kwd k=
+  let e = List.fold_left (fun a x -> a^","^x) "" k in
+  try
+    String.sub e 1 ((String.length e)-1)
+    |> Printf.sprintf "<meta name='keywords' content='%s'>"
+  with _ -> ""
+
+let kwd_to_class =
+  List.fold_left (fun a x -> a^" keyword_"^x) ""
+               
+let create_html_file t s md base kw =
 	Pandoc.process md (".pandoc_buffer");
 	File.read "tpl/article.html"
 	|> Regexp.replace "{{CSS}}" (File.read "tpl/cssheader.html")
+  |> Regexp.replace "{{KEYWORDS}}" (kwd kw)
 	|> Regexp.replace "href='css/" "href='../css/"
 	|> Regexp.replace "{{article-title}}" t
 	|> Regexp.replace
@@ -171,8 +184,7 @@ let create_html_file t s md base =
 	|> File.write ("post/"^base^".html");
 	File.remove ".pandoc_buffer";
 	print_endline ("blogengine.byte : "^base^".html generated!")
-										
-											
+																					
 
 let treat_entry filename =
 	let content = File.read filename in
@@ -210,7 +222,7 @@ let treat_entry filename =
 				 let base = File.basename x in
 				 Pandoc.process ~t:("latex") x ("pdf/"^base^".pdf");
 				 print_endline ("blogengine.byte : "^base^".pdf generated!");
-				 create_html_file title subtitle x base;
+				 create_html_file title subtitle x base keywords;
 			| None -> ()
 		in 
 		Some result
@@ -250,7 +262,7 @@ let entry_to_string e =
 			 ("post/"^base^".html", (("Lire", "post/"^base^".html") ::
 					("Lire en PDF", "pdf/"^base^".pdf") :: e.links))
 	in 
-	"<div class='a_article'>"
+	"<div class='a_article "^(kwd_to_class e.keywords)^"'>"
 	^ "<span class='a_date'>" ^ (Date.to_string e.date) ^ "</span>"
 	^ "<a class='a_title' href='"^target^"'>" ^ title ^ "</a>"
 	^ desc
