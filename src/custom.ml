@@ -29,11 +29,6 @@ let seek elt =
     String.(sub k 1 ((length k)-1))
 
   in
-  let _ =
-    let k = to_string (elt ## value) in 
-    if (k = "" || k = " " || String.length k = 0) then
-      (elt ## style ## color <- (string "#000000"))
-  in 
   let all =
     (document ## querySelectorAll (string ".a_article"))
     |> Dom.list_of_nodeList
@@ -53,6 +48,5 @@ let seek elt =
 let state () =
   let searchbar = ((CoerceTo.input (retreive "search-bar") |> unopt)) in
   searchbar ## onkeyup <- Dom.handler (fun _ -> seek searchbar; _true)
-  (* searchbar ## onblur <- Dom.handler (fun _ -> seek searchbar; _true) *)
 let _ = run state
   
