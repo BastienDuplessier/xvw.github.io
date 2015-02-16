@@ -108,6 +108,7 @@
 		padding: 0;
 }
 
+#search-bar,
 .enum-links li {
 		list-style-type: none;
 		display: inline-block;
@@ -118,6 +119,7 @@
 		padding-right: 12px;
 		border-radius: 10px;
 		font-size: 0.7em;
+    border: 0px solid black;
 }
 
 .enum-links li a {
