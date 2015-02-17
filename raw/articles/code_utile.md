@@ -4,14 +4,14 @@
 
 > Cet article est assez spécial car il parlera de moi. Il mérite le label "life style" et se veut témoin d'un état assez fun que j'ai pu expérimenter récemment, en concevant un programme me rendant réellement service. L'article est donc volontairement court.
 
-Mon parcour en informatique a été assez classique, j'ai commencé par le web, pour ensuite me tourner vers les jeux-vidéos, pour ensuite m'intéresser à l'efficacité des langages utilisés et m'intéresser à l'élégance mise en oeuvre dans l'implémentation d'un problème.
+Mon parcours en informatique a été assez classique, j'ai commencé par le web, pour ensuite me tourner vers les jeux-vidéos, pour ensuite m'intéresser à l'efficacité des langages utilisés et m'intéresser à l'élégance mise en oeuvre dans l'implémentation d'un problème.
 
 ### J'aime bien faire des bibliothèques
-Si l'on fait abstraction des travaux que j'ai dût effectuer dans les entreprises où j'ai eu l'occasion de travailler, on peut dire que j'aime beaucoup *la masturbation intellectuelle*. Et que plutôt que d'aimer construire une page web, je préfère créer une collection d'outils pour faciliter la construction de cette page web. Que plutôt que créer un jeu, je préfère créer une collection d'outils pour faciliter la construction du jeu... soit des outils pour construire... qui ne seront jamais utilisés par personne car même si j'aime bien construire l'outil, j'apprécie moins l'idée de le documenter...
+Si l'on fait abstraction des travaux que j'ai dû effectuer dans les entreprises où j'ai eu l'occasion de travailler, on peut dire que j'aime beaucoup *la masturbation intellectuelle*. Et que plutôt que d'aimer construire une page web, je préfère créer une collection d'outils pour faciliter la construction de cette page web. Que plutôt que créer un jeu, je préfère créer une collection d'outils pour faciliter la construction du jeu... soit des outils pour construire... qui ne seront jamais utilisés par personne car même si j'aime bien construire l'outil, j'apprécie moins l'idée de le documenter...
 
 > Il est évident que j'exagère, certaines de mes contributions auront au moins eu un peu d'impact dans mon entourage ...
 
-Globalement, au fil des années, je suis devenu un "réfléchisseur de framework". (Donc, je ne les codes pas, je les imagines, les commences et les abandonnes !)
+Globalement, au fil des années, je suis devenu un "réfléchisseur de framework". (Donc, je ne les code pas, je les imagine, je les commence et les abandonne !)
 
 ### Transmettre mon émerveillement pour ma passion
 Quand je me justifie de ma passion (l'informatique, dans ce contexte), à des personnes n'ayant pas spécialement de formation scientifique, je sélectionne souvent des petits cas de figures où l'informatique, et plus précisemment le développement de logiciel, m'a aidé. Des cas d'implémentations explicables. Par exemple :
@@ -19,7 +19,7 @@ Quand je me justifie de ma passion (l'informatique, dans ce contexte), à des pe
 *   Un programme pour organiser ses dépenses en vacances (avant que l'on ne découvre [Tricount](http://tricount.com/fr/))
 *   Un outil pour générer des listes de cadeaux uniformes (et sans redondance à l'occasion des fêtes de fin d'années, pour éviter de recevoir deux fois le même cadeau).
 
-Alors que j'ai déjà codé des choses super cools, théoriquement parlant, ce que j'aurai tendance à présenter sont les choses **fondamentalement utiles**. Un argument serait que comme le background de mon interlocuteur n'est pas spécialement scientifique, ce qui est théorique ne l'intéresse pas. C'est évident.
+Alors que j'ai déjà codé des choses super cool, théoriquement parlant, ce que j'aurai tendance à présenter sont les choses **fondamentalement utiles**. Un argument serait que comme le background de mon interlocuteur n'est pas spécialement scientifique, ce qui est théorique ne l'intéresse pas. C'est évident.
 
 ### Le programme minimal est parfait
 Je lisais récemment un [article de Joe Armstrong](http://joearms.github.io/2014/06/25/minimal-viable-program.html) sur la plus courte manière de solutionner un problème, de manière élégante, sans avoir besoin de features additionnelles. Cette approche est réellement cool, et aux antipodes des barbares comme moi, voulant "*construire des frameworks à l'emporte-pièce*".
