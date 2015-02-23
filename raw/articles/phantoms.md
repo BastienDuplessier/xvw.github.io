@@ -80,7 +80,7 @@ let km_to_cm = function
 Cette manière de procéder semble correcte, et si je tente
 une conversion sur une valeur invalide, par exemple
 `let test = km_to_cm (cm 10.0)`, mon code renverra une erreur
-`IllegalMeasureData`, et ce à la compilation. Cependant, si l'erreur se
+`IllegalMeasureData` et ce à la compilation. Cependant, si l'erreur se
 déclenche, c'est uniquement parce que la variable *test* évalue
 directement l'expression `km_to_cm (cm 10.0)`. Voyons ce qu'il se passe
 si nous essayons de compiler notre code avec cette déclaration :
@@ -304,7 +304,7 @@ sig
   val km : float -> [`Km] t 
   val cm : float -> [`Cm] t
   val ( + ) : 'a t -> 'a t -> 'a t
-  val km_of_cm : [`Cm] t -> [`Km] t  
+  val km_of_cm : [`Cm] t -> [`Km] t
   val cm_of_km : [`Km] t -> [`Cm] t
 end = struct
   type 'a t = float
